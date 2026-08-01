@@ -1,5 +1,10 @@
+import type { Project } from "../../types";
+
 interface StudioSidebarProps {
   activeView: "library" | "settings";
+
+  projects: Project[];
+  isLoadingProjects: boolean;
 
   onShowLibrary: () => void;
   onShowSettings: () => void;
@@ -8,6 +13,8 @@ interface StudioSidebarProps {
 
 export function StudioSidebar({
   activeView,
+  projects,
+  isLoadingProjects,
   onShowLibrary,
   onShowSettings,
   onCreateProject,
@@ -41,12 +48,42 @@ export function StudioSidebar({
 
         <div className="sidebar-section-title">
           <span>المشاريع</span>
-          <strong>0</strong>
+          <strong>{projects.length}</strong>
         </div>
 
-        <div className="sidebar-empty-projects">
-          لا توجد مشاريع بعد
-        </div>
+        {isLoadingProjects ? (
+          <div className="sidebar-empty-projects">
+            جارٍ تحميل المشاريع...
+          </div>
+        ) : projects.length === 0 ? (
+          <div className="sidebar-empty-projects">
+            لا توجد مشاريع بعد
+          </div>
+        ) : (
+          <div className="sidebar-project-list">
+            {projects.map((project) => (
+              <button
+                key={project.id}
+                type="button"
+                className="sidebar-project-button"
+                title={project.title}
+                onClick={onShowLibrary}
+              >
+                <span className="sidebar-project-letter">
+                  {getProjectInitial(project.title)}
+                </span>
+
+                <span className="sidebar-project-copy">
+                  <strong>{project.title}</strong>
+
+                  <small>
+                    {formatProjectDescription(project)}
+                  </small>
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="sidebar-spacer" />
@@ -73,4 +110,42 @@ export function StudioSidebar({
       </footer>
     </aside>
   );
+}
+
+function getProjectInitial(
+  title: string,
+): string {
+  const normalizedTitle = title.trim();
+
+  return normalizedTitle
+    ? normalizedTitle.charAt(0)
+    : "م";
+}
+
+function formatProjectDescription(
+  project: Project,
+): string {
+  if (project.projectType === "series") {
+    const episodeCount =
+      project.plannedEpisodeCount ?? "—";
+
+    return `${episodeCount} حلقة`;
+  }
+
+  switch (project.projectType) {
+    case "film":
+      return "فيلم";
+
+    case "short_film":
+      return "فيلم قصير";
+
+    case "single_episode":
+      return "حلقة منفردة";
+
+    case "stage_play":
+      return "مسرحية";
+
+    default:
+      return "مشروع درامي";
+  }
 }
