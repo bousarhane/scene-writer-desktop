@@ -22,6 +22,13 @@
       "csp": null
     }
   },
+  "plugins": {
+    "sql": {
+      "preload": [
+        "sqlite:scene-writer.db"
+      ]
+    }
+  },
   "bundle": {
     "active": true,
     "targets": "all",
