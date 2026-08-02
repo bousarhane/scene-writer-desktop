@@ -21,3 +21,11 @@ export type {
 export {
   SqliteCharacterRepository,
 } from "./SqliteCharacterRepository";
+
+export type {
+  CharacterRelationRepository,
+} from "./CharacterRelationRepository";
+
+export {
+  SqliteCharacterRelationRepository,
+} from "./SqliteCharacterRelationRepository";

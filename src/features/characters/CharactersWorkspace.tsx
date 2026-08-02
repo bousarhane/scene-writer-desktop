@@ -4,7 +4,9 @@ import {
   useState,
   type FormEvent,
 } from "react";
-
+import {
+  CharacterRelationsPanel,
+} from "./CharacterRelationsPanel";
 import type {
   Character,
   CharacterGender,
@@ -900,6 +902,13 @@ export function CharactersWorkspace({
               </button>
             </div>
           </form>
+		  {selectedCharacter !== null && (
+            <CharacterRelationsPanel
+              projectId={project.id}
+              character={selectedCharacter}
+              characters={characters}
+            />
+          )}
         </section>
       </div>
     </main>
