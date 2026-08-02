@@ -3,15 +3,28 @@ import {
   type FormEvent,
 } from "react";
 
-import type { Project } from "../../types";
+import type {
+  Project,
+  ProjectType,
+} from "../../types";
 
-export interface CreateSeriesDialogInput {
+import {
+  ProjectDetailsForm,
+  type ProjectDetailsFormState,
+} from "./ProjectDetailsForm";
+
+import { ProjectTypeSelector } from "./ProjectTypeSelector";
+
+export interface CreateProjectDialogInput {
   title: string;
-  plannedSeasonCount: number;
-  plannedEpisodeCount: number;
-  episodeDurationMinutes: number;
-  minimumScenesPerEpisode: number | null;
-  maximumScenesPerEpisode: number | null;
+  projectType: ProjectType;
+
+  plannedSeasonCount: number | null;
+  plannedEpisodeCount: number | null;
+
+  durationMinutes: number;
+  minimumScenes: number | null;
+  maximumScenes: number | null;
 }
 
 interface CreateProjectDialogProps {
@@ -21,27 +34,22 @@ interface CreateProjectDialogProps {
 
   onClose: () => void;
 
-  onCreateSeries: (
-    input: CreateSeriesDialogInput,
+  onCreateProject: (
+    input: CreateProjectDialogInput,
   ) => Promise<Project | null>;
 }
 
-interface FormState {
-  title: string;
-  plannedSeasonCount: string;
-  plannedEpisodeCount: string;
-  episodeDurationMinutes: string;
-  minimumScenesPerEpisode: string;
-  maximumScenesPerEpisode: string;
-}
+type DialogStep =
+  | "project-type"
+  | "project-details";
 
-const initialFormState: FormState = {
+const initialFormState: ProjectDetailsFormState = {
   title: "",
+  durationMinutes: "52",
   plannedSeasonCount: "1",
   plannedEpisodeCount: "30",
-  episodeDurationMinutes: "52",
-  minimumScenesPerEpisode: "24",
-  maximumScenesPerEpisode: "26",
+  minimumScenes: "24",
+  maximumScenes: "26",
 };
 
 export function CreateProjectDialog({
@@ -49,13 +57,47 @@ export function CreateProjectDialog({
   isSubmitting,
   error,
   onClose,
-  onCreateSeries,
+  onCreateProject,
 }: CreateProjectDialogProps) {
+  const [step, setStep] =
+    useState<DialogStep>("project-type");
+
+  const [selectedType, setSelectedType] =
+    useState<ProjectType | null>(null);
+
   const [form, setForm] =
-    useState<FormState>(initialFormState);
+    useState<ProjectDetailsFormState>(
+      initialFormState,
+    );
 
   if (!isOpen) {
     return null;
+  }
+
+  function handleTypeSelection(
+    projectType: ProjectType,
+  ): void {
+    setSelectedType(projectType);
+
+    setForm(
+      getInitialFormState(projectType),
+    );
+  }
+
+  function goToDetails(): void {
+    if (selectedType === null) {
+      return;
+    }
+
+    setStep("project-details");
+  }
+
+  function goBackToTypeSelection(): void {
+    if (isSubmitting) {
+      return;
+    }
+
+    setStep("project-type");
   }
 
   async function handleSubmit(
@@ -63,32 +105,43 @@ export function CreateProjectDialog({
   ): Promise<void> {
     event.preventDefault();
 
+    if (selectedType === null) {
+      return;
+    }
+
     const createdProject =
-      await onCreateSeries({
+      await onCreateProject({
         title: form.title.trim(),
+        projectType: selectedType,
 
         plannedSeasonCount:
-          Number(form.plannedSeasonCount),
-
-        plannedEpisodeCount:
-          Number(form.plannedEpisodeCount),
-
-        episodeDurationMinutes:
-          Number(form.episodeDurationMinutes),
-
-        minimumScenesPerEpisode:
-          parseOptionalNumber(
-            form.minimumScenesPerEpisode,
+          getSeasonCount(
+            selectedType,
+            form.plannedSeasonCount,
           ),
 
-        maximumScenesPerEpisode:
+        plannedEpisodeCount:
+          getEpisodeCount(
+            selectedType,
+            form.plannedEpisodeCount,
+          ),
+
+        durationMinutes:
+          Number(form.durationMinutes),
+
+        minimumScenes:
           parseOptionalNumber(
-            form.maximumScenesPerEpisode,
+            form.minimumScenes,
+          ),
+
+        maximumScenes:
+          parseOptionalNumber(
+            form.maximumScenes,
           ),
       });
 
     if (createdProject !== null) {
-      setForm(initialFormState);
+      resetDialog();
       onClose();
     }
   }
@@ -98,8 +151,14 @@ export function CreateProjectDialog({
       return;
     }
 
-    setForm(initialFormState);
+    resetDialog();
     onClose();
+  }
+
+  function resetDialog(): void {
+    setStep("project-type");
+    setSelectedType(null);
+    setForm(initialFormState);
   }
 
   return (
@@ -107,7 +166,9 @@ export function CreateProjectDialog({
       className="project-dialog-backdrop"
       role="presentation"
       onMouseDown={(event) => {
-        if (event.target === event.currentTarget) {
+        if (
+          event.target === event.currentTarget
+        ) {
           handleClose();
         }
       }}
@@ -122,16 +183,17 @@ export function CreateProjectDialog({
         <header className="project-dialog-header">
           <div>
             <span className="project-dialog-kicker">
-              مشروع درامي جديد
+              عمل درامي جديد
             </span>
 
             <h2 id="create-project-title">
-              إنشاء مسلسل
+              إنشاء مشروع
             </h2>
 
             <p>
-              حدد البنية العامة للمسلسل. يمكن تعديل
-              تفاصيل المشروع لاحقًا.
+              {step === "project-type"
+                ? "ابدأ باختيار نوع العمل الذي تريد بناءه."
+                : "أدخل المعلومات الأساسية للعمل المختار."}
             </p>
           </div>
 
@@ -146,6 +208,30 @@ export function CreateProjectDialog({
           </button>
         </header>
 
+        <div className="project-dialog-progress">
+          <span
+            className={
+              step === "project-type"
+                ? "is-active"
+                : "is-completed"
+            }
+          >
+            1
+          </span>
+
+          <i />
+
+          <span
+            className={
+              step === "project-details"
+                ? "is-active"
+                : ""
+            }
+          >
+            2
+          </span>
+        </div>
+
         {error !== null && (
           <div
             className="project-dialog-error"
@@ -155,143 +241,158 @@ export function CreateProjectDialog({
           </div>
         )}
 
-        <form
-          className="project-dialog-form"
-          onSubmit={(event) => {
-            void handleSubmit(event);
-          }}
-        >
-          <label className="project-dialog-field project-dialog-field--full">
-            <span>عنوان المشروع</span>
-
-            <input
-              type="text"
-              autoFocus
-              required
-              maxLength={180}
-              placeholder="مثال: حد الخاوة"
-              value={form.title}
-              onChange={(event) => {
-                setForm({
-                  ...form,
-                  title: event.target.value,
-                });
-              }}
+        {step === "project-type" ? (
+          <div className="project-dialog-step">
+            <ProjectTypeSelector
+              selectedType={selectedType}
+              onSelect={handleTypeSelection}
             />
-          </label>
 
-          <label className="project-dialog-field">
-            <span>عدد المواسم</span>
+            <footer className="project-dialog-actions">
+              <button
+                type="button"
+                className="project-dialog-secondary-button"
+                onClick={handleClose}
+              >
+                إلغاء
+              </button>
 
-            <input
-              type="number"
-              min="1"
-              required
-              value={form.plannedSeasonCount}
-              onChange={(event) => {
-                setForm({
-                  ...form,
-                  plannedSeasonCount:
-                    event.target.value,
-                });
-              }}
-            />
-          </label>
+              <button
+                type="button"
+                className="project-dialog-primary-button"
+                disabled={
+                  selectedType === null
+                }
+                onClick={goToDetails}
+              >
+                التالي
+              </button>
+            </footer>
+          </div>
+        ) : (
+          <form
+            className="project-dialog-form"
+            onSubmit={(event) => {
+              void handleSubmit(event);
+            }}
+          >
+            {selectedType !== null && (
+              <ProjectDetailsForm
+                projectType={selectedType}
+                form={form}
+                onChange={setForm}
+              />
+            )}
 
-          <label className="project-dialog-field">
-            <span>عدد الحلقات</span>
+            <footer className="project-dialog-actions">
+              <button
+                type="button"
+                className="project-dialog-secondary-button"
+                disabled={isSubmitting}
+                onClick={
+                  goBackToTypeSelection
+                }
+              >
+                السابق
+              </button>
 
-            <input
-              type="number"
-              min="1"
-              required
-              value={form.plannedEpisodeCount}
-              onChange={(event) => {
-                setForm({
-                  ...form,
-                  plannedEpisodeCount:
-                    event.target.value,
-                });
-              }}
-            />
-          </label>
-
-          <label className="project-dialog-field">
-            <span>مدة الحلقة بالدقائق</span>
-
-            <input
-              type="number"
-              min="1"
-              required
-              value={form.episodeDurationMinutes}
-              onChange={(event) => {
-                setForm({
-                  ...form,
-                  episodeDurationMinutes:
-                    event.target.value,
-                });
-              }}
-            />
-          </label>
-
-          <label className="project-dialog-field">
-            <span>الحد الأدنى للمشاهد</span>
-
-            <input
-              type="number"
-              min="0"
-              value={form.minimumScenesPerEpisode}
-              onChange={(event) => {
-                setForm({
-                  ...form,
-                  minimumScenesPerEpisode:
-                    event.target.value,
-                });
-              }}
-            />
-          </label>
-
-          <label className="project-dialog-field">
-            <span>الحد الأقصى للمشاهد</span>
-
-            <input
-              type="number"
-              min="0"
-              value={form.maximumScenesPerEpisode}
-              onChange={(event) => {
-                setForm({
-                  ...form,
-                  maximumScenesPerEpisode:
-                    event.target.value,
-                });
-              }}
-            />
-          </label>
-
-          <footer className="project-dialog-actions">
-            <button
-              type="button"
-              className="project-dialog-secondary-button"
-              disabled={isSubmitting}
-              onClick={handleClose}
-            >
-              إلغاء
-            </button>
-
-            <button
-              type="submit"
-              className="project-dialog-primary-button"
-              disabled={isSubmitting}
-            >
-              {isSubmitting
-                ? "جارٍ إنشاء المشروع..."
-                : "إنشاء المشروع"}
-            </button>
-          </footer>
-        </form>
+              <button
+                type="submit"
+                className="project-dialog-primary-button"
+                disabled={isSubmitting}
+              >
+                {isSubmitting
+                  ? "جارٍ إنشاء المشروع..."
+                  : "إنشاء المشروع"}
+              </button>
+            </footer>
+          </form>
+        )}
       </section>
     </div>
   );
+}
+
+function getInitialFormState(
+  projectType: ProjectType,
+): ProjectDetailsFormState {
+  switch (projectType) {
+    case "series":
+      return {
+        title: "",
+        durationMinutes: "52",
+        plannedSeasonCount: "1",
+        plannedEpisodeCount: "30",
+        minimumScenes: "24",
+        maximumScenes: "26",
+      };
+
+    case "film":
+      return {
+        title: "",
+        durationMinutes: "100",
+        plannedSeasonCount: "",
+        plannedEpisodeCount: "",
+        minimumScenes: "40",
+        maximumScenes: "60",
+      };
+
+    case "short_film":
+      return {
+        title: "",
+        durationMinutes: "20",
+        plannedSeasonCount: "",
+        plannedEpisodeCount: "",
+        minimumScenes: "8",
+        maximumScenes: "18",
+      };
+
+    case "single_episode":
+      return {
+        title: "",
+        durationMinutes: "52",
+        plannedSeasonCount: "",
+        plannedEpisodeCount: "1",
+        minimumScenes: "24",
+        maximumScenes: "26",
+      };
+
+    case "stage_play":
+      return {
+        title: "",
+        durationMinutes: "90",
+        plannedSeasonCount: "",
+        plannedEpisodeCount: "",
+        minimumScenes: "",
+        maximumScenes: "",
+      };
+  }
+}
+
+function getSeasonCount(
+  projectType: ProjectType,
+  value: string,
+): number | null {
+  if (projectType !== "series") {
+    return null;
+  }
+
+  return Number(value);
+}
+
+function getEpisodeCount(
+  projectType: ProjectType,
+  value: string,
+): number | null {
+  if (projectType === "series") {
+    return Number(value);
+  }
+
+  if (projectType === "single_episode") {
+    return 1;
+  }
+
+  return null;
 }
 
 function parseOptionalNumber(

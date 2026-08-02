@@ -15,13 +15,14 @@
 }
 
 .project-dialog {
-  width: min(720px, 100%);
+  width: min(760px, 100%);
   max-height: calc(100vh - 56px);
 
   overflow-y: auto;
 
   border:
-    1px solid rgba(132, 101, 75, 0.25);
+    1px solid
+    rgba(132, 101, 75, 0.25);
 
   border-radius: 16px;
 
@@ -40,7 +41,8 @@
   gap: 24px;
   padding: 25px 27px 21px;
 
-  border-bottom: 1px solid #e3e6ea;
+  border-bottom:
+    1px solid #e3e6ea;
 }
 
 .project-dialog-kicker {
@@ -93,6 +95,46 @@
   background: #f5f6f8;
 }
 
+.project-dialog-progress {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 18px 27px 0;
+}
+
+.project-dialog-progress span {
+  display: grid;
+  place-items: center;
+
+  width: 30px;
+  height: 30px;
+
+  border: 1px solid #d4d8de;
+  border-radius: 50%;
+
+  color: #777c83;
+  background: #ffffff;
+
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.project-dialog-progress span.is-active,
+.project-dialog-progress span.is-completed {
+  border-color: #84654b;
+
+  color: #ffffff;
+  background: #84654b;
+}
+
+.project-dialog-progress i {
+  width: 90px;
+  height: 1px;
+
+  background: #d9dde3;
+}
+
 .project-dialog-error {
   margin: 20px 27px 0;
   padding: 13px 15px;
@@ -107,14 +149,157 @@
   white-space: pre-line;
 }
 
+.project-dialog-step {
+  padding: 24px 27px 27px;
+}
+
+.project-type-selector-heading h3,
+.project-details-heading h3 {
+  margin: 0 0 7px;
+
+  color: #292c30;
+  font-size: 20px;
+}
+
+.project-type-selector-heading p,
+.project-details-heading p {
+  margin: 0;
+
+  color: #717780;
+  line-height: 1.7;
+}
+
+.project-type-options {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.project-type-option {
+  display: flex;
+  align-items: center;
+
+  min-height: 88px;
+
+  gap: 12px;
+  padding: 14px;
+
+  border: 1px solid #d8dce2;
+  border-radius: 11px;
+
+  color: #33363b;
+  background: #ffffff;
+
+  text-align: right;
+}
+
+.project-type-option:hover {
+  border-color: #bca58f;
+  background: #fcfaf8;
+}
+
+.project-type-option.is-selected {
+  border-color: #84654b;
+
+  background:
+    rgba(132, 101, 75, 0.08);
+
+  box-shadow:
+    0 0 0 3px
+    rgba(132, 101, 75, 0.1);
+}
+
+.project-type-option-symbol {
+  display: grid;
+  place-items: center;
+
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+
+  border-radius: 11px;
+
+  color: #ffffff;
+  background: #84654b;
+
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.project-type-option-copy {
+  min-width: 0;
+  flex: 1;
+}
+
+.project-type-option-copy strong,
+.project-type-option-copy small {
+  display: block;
+}
+
+.project-type-option-copy strong {
+  margin-bottom: 5px;
+
+  font-size: 14px;
+}
+
+.project-type-option-copy small {
+  color: #747980;
+
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.project-type-option-check {
+  display: grid;
+  place-items: center;
+
+  width: 22px;
+  height: 22px;
+
+  border: 1px solid #d6dae0;
+  border-radius: 50%;
+
+  color: #ffffff;
+  background: #ffffff;
+
+  font-size: 12px;
+}
+
+.project-type-option.is-selected
+  .project-type-option-check {
+  border-color: #84654b;
+  background: #84654b;
+}
+
 .project-dialog-form {
+  padding: 24px 27px 27px;
+}
+
+.project-details-heading {
+  margin-bottom: 22px;
+}
+
+.project-details-heading > span {
+  display: block;
+
+  margin-bottom: 6px;
+
+  color: #84654b;
+
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.project-details-fields {
   display: grid;
 
   grid-template-columns:
     repeat(2, minmax(0, 1fr));
 
   gap: 18px;
-  padding: 25px 27px 27px;
 }
 
 .project-dialog-field {
@@ -156,14 +341,30 @@
     rgba(132, 101, 75, 0.13);
 }
 
-.project-dialog-actions {
+.project-dialog-information {
   grid-column: 1 / -1;
 
+  padding: 13px 15px;
+
+  border:
+    1px solid
+    rgba(132, 101, 75, 0.18);
+
+  border-radius: 9px;
+
+  color: #665443;
+  background:
+    rgba(132, 101, 75, 0.07);
+
+  font-size: 13px;
+}
+
+.project-dialog-actions {
   display: flex;
   justify-content: flex-start;
 
   gap: 10px;
-  padding-top: 8px;
+  margin-top: 24px;
 }
 
 .project-dialog-primary-button,
@@ -204,16 +405,16 @@
 .project-dialog-secondary-button:disabled,
 .project-dialog-close:disabled {
   cursor: wait;
-  opacity: 0.6;
+  opacity: 0.55;
 }
 
 @media (max-width: 700px) {
-  .project-dialog-form {
+  .project-type-options,
+  .project-details-fields {
     grid-template-columns: 1fr;
   }
 
-  .project-dialog-field--full,
-  .project-dialog-actions {
+  .project-dialog-field--full {
     grid-column: auto;
   }
 }

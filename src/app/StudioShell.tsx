@@ -1,38 +1,122 @@
-﻿import { useState } from "react";
+﻿import {
+  useCallback,
+  useState,
+} from "react";
 
 import { StudioSidebar } from "../components/layout/StudioSidebar";
 import { StudioTopbar } from "../components/layout/StudioTopbar";
 
 import {
   CreateProjectDialog,
-  type CreateSeriesDialogInput,
+  type CreateProjectDialogInput,
 } from "../features/projects/CreateProjectDialog";
+
+import {
+  ProjectWorkspace,
+  type ProjectWorkspaceSection,
+} from "../features/projects/ProjectWorkspace";
 
 import { useProjects } from "../features/projects/useProjects";
 
-import "../features/projects/create-project-dialog.css";
+import type { Project } from "../types";
 
-type StudioView = "library" | "settings";
+import "../features/projects/create-project-dialog.css";
+import "../features/projects/project-workspace.css";
+
+type StudioView =
+  | "library"
+  | "settings"
+  | "project";
 
 export function StudioShell() {
   const [activeView, setActiveView] =
     useState<StudioView>("library");
 
-  const [sidebarCollapsed, setSidebarCollapsed] =
-    useState(false);
+  const [
+    selectedProjectId,
+    setSelectedProjectId,
+  ] = useState<string | null>(null);
 
-  const [isCreateDialogOpen, setIsCreateDialogOpen] =
-    useState(false);
+  const [
+    currentProject,
+    setCurrentProject,
+  ] = useState<Project | null>(null);
 
-  const [isCreatingProject, setIsCreatingProject] =
-    useState(false);
+  const [
+    activeProjectSection,
+    setActiveProjectSection,
+  ] =
+    useState<ProjectWorkspaceSection>(
+      "dashboard",
+    );
+
+  const [
+    sidebarCollapsed,
+    setSidebarCollapsed,
+  ] = useState(false);
+
+  const [
+    isCreateDialogOpen,
+    setIsCreateDialogOpen,
+  ] = useState(false);
+
+  const [
+    isCreatingProject,
+    setIsCreatingProject,
+  ] = useState(false);
 
   const {
     projects,
     isLoading,
     error,
-    createSeries,
+    createProject,
   } = useProjects();
+
+  function showLibrary(): void {
+    setSelectedProjectId(null);
+    setCurrentProject(null);
+    setActiveProjectSection(
+      "dashboard",
+    );
+    setActiveView("library");
+  }
+
+  function showSettings(): void {
+    setSelectedProjectId(null);
+    setCurrentProject(null);
+    setActiveView("settings");
+  }
+
+  function openProject(
+    projectId: string,
+  ): void {
+    setSelectedProjectId(projectId);
+
+    setCurrentProject(
+      projects.find(
+        (project) =>
+          project.id === projectId,
+      ) ?? null,
+    );
+
+    setActiveProjectSection(
+      "dashboard",
+    );
+
+    setActiveView("project");
+  }
+
+  const handleProjectLoaded =
+    useCallback(
+      (
+        loadedProject: Project,
+      ): void => {
+        setCurrentProject(
+          loadedProject,
+        );
+      },
+      [],
+    );
 
   function openCreateProjectDialog(): void {
     setActiveView("library");
@@ -47,16 +131,29 @@ export function StudioShell() {
     setIsCreateDialogOpen(false);
   }
 
-  async function handleCreateSeries(
-    input: CreateSeriesDialogInput,
+  async function handleCreateProject(
+    input: CreateProjectDialogInput,
   ) {
     setIsCreatingProject(true);
 
     try {
-      return await createSeries(input);
+      return await createProject(input);
     } finally {
       setIsCreatingProject(false);
     }
+  }
+
+  function getTopbarTitle(): string {
+    if (activeView === "settings") {
+      return "الإعدادات";
+    }
+
+    if (activeView === "project") {
+      return currentProject?.title ??
+        "المشروع";
+    }
+
+    return "مكتبة المشاريع";
   }
 
   return (
@@ -69,56 +166,92 @@ export function StudioShell() {
       dir="rtl"
     >
       <StudioSidebar
+        mode={
+          activeView === "project"
+            ? "project"
+            : "library"
+        }
         activeView={activeView}
         projects={projects}
         isLoadingProjects={isLoading}
-        onShowLibrary={() => {
-          setActiveView("library");
-        }}
-        onShowSettings={() => {
-          setActiveView("settings");
-        }}
+        currentProject={currentProject}
+        activeProjectSection={
+          activeProjectSection
+        }
+        onShowLibrary={showLibrary}
+        onShowSettings={showSettings}
         onCreateProject={
           openCreateProjectDialog
+        }
+        onOpenProject={openProject}
+        onSelectProjectSection={
+          setActiveProjectSection
         }
       />
 
       <div className="studio-main">
         <StudioTopbar
-          title={
-            activeView === "library"
-              ? "مكتبة المشاريع"
-              : "الإعدادات"
+          title={getTopbarTitle()}
+          sidebarCollapsed={
+            sidebarCollapsed
           }
-          sidebarCollapsed={sidebarCollapsed}
           onToggleSidebar={() => {
             setSidebarCollapsed(
-              (currentValue) => !currentValue,
+              (currentValue) =>
+                !currentValue,
             );
           }}
         />
 
         <section className="studio-workspace">
-          {activeView === "library" ? (
+          {activeView === "library" && (
             <LibraryView
-              projectCount={projects.length}
+              projectCount={
+                projects.length
+              }
               isLoading={isLoading}
               onCreateProject={
                 openCreateProjectDialog
               }
             />
-          ) : (
+          )}
+
+          {activeView === "settings" && (
             <SettingsPlaceholder />
           )}
+
+          {activeView === "project" &&
+            selectedProjectId !== null && (
+              <ProjectWorkspace
+                projectId={
+                  selectedProjectId
+                }
+                activeSection={
+                  activeProjectSection
+                }
+                onProjectLoaded={
+                  handleProjectLoaded
+                }
+                onBackToLibrary={
+                  showLibrary
+                }
+              />
+            )}
         </section>
       </div>
 
       <CreateProjectDialog
         isOpen={isCreateDialogOpen}
-        isSubmitting={isCreatingProject}
+        isSubmitting={
+          isCreatingProject
+        }
         error={error}
-        onClose={closeCreateProjectDialog}
-        onCreateSeries={handleCreateSeries}
+        onClose={
+          closeCreateProjectDialog
+        }
+        onCreateProject={
+          handleCreateProject
+        }
       />
     </div>
   );
@@ -135,7 +268,8 @@ function LibraryView({
   isLoading,
   onCreateProject,
 }: LibraryViewProps) {
-  const hasProjects = projectCount > 0;
+  const hasProjects =
+    projectCount > 0;
 
   return (
     <main className="library-view">
@@ -146,7 +280,9 @@ function LibraryView({
           <p>
             {isLoading
               ? "جارٍ تحميل المشاريع..."
-              : formatProjectCount(projectCount)}
+              : formatProjectCount(
+                  projectCount,
+                )}
           </p>
         </div>
 
@@ -159,28 +295,34 @@ function LibraryView({
         </button>
       </header>
 
-      {!hasProjects && !isLoading && (
-        <section className="library-empty-state">
-          <div className="empty-state-mark">
-            SW
-          </div>
+      {!hasProjects &&
+        !isLoading && (
+          <section className="library-empty-state">
+            <div className="empty-state-mark">
+              SW
+            </div>
 
-          <h2>لا توجد مشاريع بعد</h2>
+            <h2>
+              لا توجد مشاريع بعد
+            </h2>
 
-          <p>
-            أنشئ مشروعك الأول، ثم ابدأ بناء
-            الحكاية والشخصيات والحلقات والمشاهد.
-          </p>
+            <p>
+              أنشئ مشروعك الأول، ثم ابدأ
+              بناء الحكاية والشخصيات
+              وبنية العمل والمشاهد.
+            </p>
 
-          <button
-            type="button"
-            className="primary-button"
-            onClick={onCreateProject}
-          >
-            إنشاء أول مشروع
-          </button>
-        </section>
-      )}
+            <button
+              type="button"
+              className="primary-button"
+              onClick={
+                onCreateProject
+              }
+            >
+              إنشاء أول مشروع
+            </button>
+          </section>
+        )}
 
       {hasProjects && (
         <section className="library-empty-state">
@@ -188,11 +330,14 @@ function LibraryView({
             {projectCount}
           </div>
 
-          <h2>مشاريعك محفوظة محليًا</h2>
+          <h2>
+            مشاريعك محفوظة محليًا
+          </h2>
 
           <p>
-            اختر مشروعًا من الشريط الجانبي،
-            أو أنشئ مشروعًا جديدًا.
+            اختر مشروعًا من الشريط
+            الجانبي، أو أنشئ مشروعًا
+            جديدًا.
           </p>
         </section>
       )}
@@ -204,13 +349,16 @@ function SettingsPlaceholder() {
   return (
     <main className="settings-view">
       <div className="settings-card">
-        <div className="settings-mark">إ</div>
+        <div className="settings-mark">
+          إ
+        </div>
 
         <h1>إعدادات التطبيق</h1>
 
         <p>
-          ستضم هذه المساحة إعدادات اللغة
-          والمظهر والحفظ والطباعة والتصدير.
+          ستضم هذه المساحة إعدادات
+          اللغة والمظهر والحفظ والطباعة
+          والتصدير.
         </p>
       </div>
     </main>
