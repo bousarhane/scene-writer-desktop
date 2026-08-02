@@ -1,4 +1,6 @@
 import {
+  CharactersWorkspace,
+} from "../characters/CharactersWorkspace";import {
   useEffect,
   useState,
 } from "react";
@@ -191,7 +193,15 @@ export function ProjectWorkspace({
       />
     );
   }
-
+if (
+  activeSection === "characters"
+) {
+  return (
+    <CharactersWorkspace
+      project={project}
+    />
+  );
+}
   return (
     <ProjectSectionPlaceholder
       project={project}

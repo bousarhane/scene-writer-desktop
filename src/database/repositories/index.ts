@@ -13,3 +13,11 @@ export type {
 export {
   SqliteProjectStoryRepository,
 } from "./SqliteProjectStoryRepository";
+
+export type {
+  CharacterRepository,
+} from "./CharacterRepository";
+
+export {
+  SqliteCharacterRepository,
+} from "./SqliteCharacterRepository";
