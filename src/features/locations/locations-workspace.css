@@ -1,0 +1,421 @@
+.locations-workspace {
+  width: min(1180px, calc(100% - 48px));
+  margin: 0 auto;
+  padding: 34px 0 70px;
+}
+
+.locations-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.locations-kicker {
+  display: block;
+
+  margin-bottom: 7px;
+
+  color: #84654b;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.locations-header h1 {
+  margin: 0;
+
+  color: #25272b;
+  font-size: 34px;
+}
+
+.locations-header p {
+  margin: 8px 0 0;
+
+  color: #717780;
+  line-height: 1.7;
+}
+
+.locations-layout {
+  display: grid;
+
+  grid-template-columns:
+    minmax(260px, 320px)
+    minmax(0, 1fr);
+
+  gap: 18px;
+}
+
+.locations-list-panel,
+.location-editor-panel {
+  border: 1px solid #dfe3e8;
+  border-radius: 14px;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 10px 30px
+    rgba(35, 41, 48, 0.05);
+}
+
+.locations-list-panel {
+  align-self: start;
+  overflow: hidden;
+}
+
+.locations-list-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 17px 18px;
+
+  border-bottom: 1px solid #e5e8ec;
+}
+
+.locations-list-heading span {
+  display: grid;
+  place-items: center;
+
+  min-width: 27px;
+  height: 27px;
+
+  padding: 0 8px;
+
+  border-radius: 999px;
+
+  color: #6f523b;
+  background: #eee4da;
+
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.locations-list-tools {
+  display: grid;
+
+  gap: 8px;
+  padding: 12px;
+
+  border-bottom: 1px solid #e5e8ec;
+  background: #fafbfc;
+}
+
+.locations-list-tools input,
+.locations-list-tools select {
+  width: 100%;
+
+  padding: 9px 10px;
+
+  border: 1px solid #d2d7dd;
+  border-radius: 8px;
+
+  color: #35393e;
+  background: #ffffff;
+
+  outline: none;
+}
+
+.locations-list-tools input:focus,
+.locations-list-tools select:focus {
+  border-color: #84654b;
+
+  box-shadow:
+    0 0 0 3px
+    rgba(132, 101, 75, 0.11);
+}
+
+.locations-list {
+  display: flex;
+  flex-direction: column;
+
+  max-height: 650px;
+
+  gap: 4px;
+  padding: 8px;
+
+  overflow-y: auto;
+}
+
+.locations-list-state {
+  padding: 28px 18px;
+
+  color: #747980;
+  text-align: center;
+  line-height: 1.7;
+}
+
+.location-list-item {
+  display: flex;
+  align-items: center;
+
+  width: 100%;
+
+  gap: 11px;
+  padding: 10px;
+
+  border: 1px solid transparent;
+  border-radius: 9px;
+
+  color: #44484e;
+  background: transparent;
+
+  text-align: right;
+}
+
+.location-list-item:hover {
+  background: #f6f7f8;
+}
+
+.location-list-item.is-active {
+  border-color: #dacbbb;
+  background: #f4eee8;
+}
+
+.location-list-symbol {
+  display: grid;
+  place-items: center;
+
+  width: 37px;
+  height: 37px;
+  flex: 0 0 37px;
+
+  border-radius: 10px;
+
+  color: #ffffff;
+  background: #84654b;
+
+  font-weight: 800;
+}
+
+.location-list-copy {
+  min-width: 0;
+}
+
+.location-list-copy strong,
+.location-list-copy small {
+  display: block;
+}
+
+.location-list-copy strong {
+  overflow: hidden;
+
+  color: #292c30;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.location-list-copy small {
+  margin-top: 4px;
+
+  color: #7a7f86;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.location-editor-panel {
+  padding: 22px;
+}
+
+.location-editor-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 20px;
+  margin-bottom: 22px;
+}
+
+.location-editor-heading span {
+  color: #84654b;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.location-editor-heading h2 {
+  margin: 5px 0 0;
+
+  color: #292c30;
+}
+
+.location-editor-status {
+  display: flex;
+  align-items: center;
+
+  gap: 9px;
+}
+
+.location-save-status {
+  padding: 7px 10px;
+
+  border-radius: 999px;
+
+  color: #477553;
+  background: rgba(91, 154, 106, 0.11);
+
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.location-save-status.is-dirty {
+  color: #8a6334;
+  background: rgba(181, 132, 69, 0.13);
+}
+
+.location-form {
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 16px;
+}
+
+.location-form-field {
+  display: flex;
+  flex-direction: column;
+
+  gap: 7px;
+}
+
+.location-form-field--full {
+  grid-column: 1 / -1;
+}
+
+.location-form-field > span {
+  color: #3e4248;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.location-form-field > small {
+  color: #858a91;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.location-form-field input,
+.location-form-field select,
+.location-form-field textarea {
+  width: 100%;
+
+  padding: 11px 12px;
+
+  border: 1px solid #cfd4db;
+  border-radius: 8px;
+
+  color: #25272b;
+  background: #fbfcfd;
+
+  outline: none;
+}
+
+.location-form-field textarea {
+  line-height: 1.75;
+  resize: vertical;
+}
+
+.location-form-field input:focus,
+.location-form-field select:focus,
+.location-form-field textarea:focus {
+  border-color: #84654b;
+  background: #ffffff;
+
+  box-shadow:
+    0 0 0 3px
+    rgba(132, 101, 75, 0.12);
+}
+
+.location-form-actions {
+  display: flex;
+  justify-content: flex-end;
+
+  grid-column: 1 / -1;
+
+  gap: 9px;
+  padding-top: 6px;
+}
+
+.locations-primary-button,
+.locations-secondary-button,
+.locations-danger-button {
+  min-height: 40px;
+
+  padding: 8px 16px;
+
+  border-radius: 8px;
+
+  font-weight: 600;
+}
+
+.locations-primary-button {
+  border: 1px solid #84654b;
+
+  color: #ffffff;
+  background: #84654b;
+}
+
+.locations-secondary-button {
+  border: 1px solid #d4d8de;
+
+  color: #44484e;
+  background: #ffffff;
+}
+
+.locations-danger-button {
+  border: 1px solid #e0bcbc;
+
+  color: #902f2f;
+  background: #fff7f7;
+}
+
+.locations-primary-button:disabled,
+.locations-secondary-button:disabled,
+.locations-danger-button:disabled {
+  cursor: default;
+  opacity: 0.52;
+}
+
+.locations-error {
+  margin-bottom: 18px;
+  padding: 13px 15px;
+
+  border: 1px solid #e5bcbc;
+  border-radius: 9px;
+
+  color: #8b2929;
+  background: #fff5f5;
+}
+
+@media (max-width: 950px) {
+  .locations-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .location-form {
+    grid-template-columns: 1fr;
+  }
+
+  .location-form-field--full,
+  .location-form-actions {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 680px) {
+  .locations-workspace {
+    width: min(100% - 24px, 1180px);
+  }
+
+  .locations-header,
+  .location-editor-heading {
+    flex-direction: column;
+  }
+
+  .location-editor-status {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+}

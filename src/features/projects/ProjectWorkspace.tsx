@@ -1,6 +1,4 @@
 import {
-  CharactersWorkspace,
-} from "../characters/CharactersWorkspace";import {
   useEffect,
   useState,
 } from "react";
@@ -13,6 +11,14 @@ import type {
   Project,
   ProjectType,
 } from "../../types";
+
+import {
+  CharactersWorkspace,
+} from "../characters/CharactersWorkspace";
+
+import {
+  LocationsWorkspace,
+} from "../locations/LocationsWorkspace";
 
 import {
   ProjectStoryEditor,
@@ -193,15 +199,27 @@ export function ProjectWorkspace({
       />
     );
   }
-if (
-  activeSection === "characters"
-) {
-  return (
-    <CharactersWorkspace
-      project={project}
-    />
-  );
-}
+
+  if (
+    activeSection === "characters"
+  ) {
+    return (
+      <CharactersWorkspace
+        project={project}
+      />
+    );
+  }
+
+  if (
+    activeSection === "locations"
+  ) {
+    return (
+      <LocationsWorkspace
+        project={project}
+      />
+    );
+  }
+
   return (
     <ProjectSectionPlaceholder
       project={project}
