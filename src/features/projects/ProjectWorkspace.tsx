@@ -3,12 +3,18 @@ import {
   useState,
 } from "react";
 
-import { projectService } from "../../application";
+import {
+  projectService,
+} from "../../application";
 
 import type {
   Project,
   ProjectType,
 } from "../../types";
+
+import {
+  ProjectStoryEditor,
+} from "../stories/ProjectStoryEditor";
 
 export type ProjectWorkspaceSection =
   | "dashboard"
@@ -23,7 +29,9 @@ export type ProjectWorkspaceSection =
 
 interface ProjectWorkspaceProps {
   projectId: string;
-  activeSection: ProjectWorkspaceSection;
+
+  activeSection:
+    ProjectWorkspaceSection;
 
   onProjectLoaded: (
     project: Project,
@@ -50,7 +58,8 @@ export function ProjectWorkspace({
   useEffect(() => {
     let isCancelled = false;
 
-    async function loadProject(): Promise<void> {
+    async function loadProject():
+      Promise<void> {
       setIsLoading(true);
       setError(null);
 
@@ -80,7 +89,10 @@ export function ProjectWorkspace({
         }
 
         setProject(openedProject);
-        onProjectLoaded(openedProject);
+
+        onProjectLoaded(
+          openedProject,
+        );
       } catch (caughtError) {
         if (isCancelled) {
           return;
@@ -103,7 +115,10 @@ export function ProjectWorkspace({
     return () => {
       isCancelled = true;
     };
-  }, [projectId, onProjectLoaded]);
+  }, [
+    projectId,
+    onProjectLoaded,
+  ]);
 
   if (isLoading) {
     return (
@@ -116,7 +131,9 @@ export function ProjectWorkspace({
   if (error !== null) {
     return (
       <WorkspaceState>
-        <h2>تعذر فتح المشروع</h2>
+        <h2>
+          تعذر فتح المشروع
+        </h2>
 
         <p>{error}</p>
 
@@ -134,11 +151,14 @@ export function ProjectWorkspace({
   if (project === null) {
     return (
       <WorkspaceState>
-        <h2>المشروع غير موجود</h2>
+        <h2>
+          المشروع غير موجود
+        </h2>
 
         <p>
-          قد يكون المشروع قد حُذف أو لم يعد
-          متاحًا في قاعدة البيانات المحلية.
+          قد يكون المشروع قد حُذف
+          أو لم يعد متاحًا في قاعدة
+          البيانات المحلية.
         </p>
 
         <button
@@ -152,9 +172,21 @@ export function ProjectWorkspace({
     );
   }
 
-  if (activeSection === "dashboard") {
+  if (
+    activeSection === "dashboard"
+  ) {
     return (
       <ProjectDashboard
+        project={project}
+      />
+    );
+  }
+
+  if (
+    activeSection === "story"
+  ) {
+    return (
+      <ProjectStoryEditor
         project={project}
       />
     );
@@ -205,16 +237,20 @@ function ProjectDashboard({
             )}
           </span>
 
-          <h1>{project.title}</h1>
+          <h1>
+            {project.title}
+          </h1>
 
           <p>
-            لوحة المشروع الرئيسية ومعلوماته
-            الأساسية.
+            لوحة المشروع الرئيسية
+            ومعلوماته الأساسية.
           </p>
         </div>
 
         <div className="project-dashboard-status">
-          <span>حالة المشروع</span>
+          <span>
+            حالة المشروع
+          </span>
 
           <strong>
             {getProjectStatusLabel(
@@ -225,22 +261,22 @@ function ProjectDashboard({
       </header>
 
       <section className="project-dashboard-stats">
-        {getProjectStatistics(project).map(
-          (statistic) => (
-            <article
-              key={statistic.label}
-              className="project-stat-card"
-            >
-              <span>
-                {statistic.label}
-              </span>
+        {getProjectStatistics(
+          project,
+        ).map((statistic) => (
+          <article
+            key={statistic.label}
+            className="project-stat-card"
+          >
+            <span>
+              {statistic.label}
+            </span>
 
-              <strong>
-                {statistic.value}
-              </strong>
-            </article>
-          ),
-        )}
+            <strong>
+              {statistic.value}
+            </strong>
+          </article>
+        ))}
       </section>
 
       <section className="project-dashboard-panel">
@@ -254,9 +290,10 @@ function ProjectDashboard({
           </h2>
 
           <p>
-            يمكن الانتقال من الشريط الجانبي
-            إلى الحكاية والشخصيات والأماكن
-            وبنية العمل والمشاهد.
+            يمكن الانتقال من الشريط
+            الجانبي إلى الحكاية
+            والشخصيات والأماكن وبنية
+            العمل والمشاهد.
           </p>
         </div>
       </section>
@@ -266,7 +303,9 @@ function ProjectDashboard({
 
 interface ProjectSectionPlaceholderProps {
   project: Project;
-  section: ProjectWorkspaceSection;
+
+  section:
+    ProjectWorkspaceSection;
 }
 
 function ProjectSectionPlaceholder({
@@ -292,14 +331,19 @@ function ProjectSectionPlaceholder({
         {project.title}
       </span>
 
-      <h1>{sectionInformation.title}</h1>
+      <h1>
+        {sectionInformation.title}
+      </h1>
 
       <p>
-        {sectionInformation.description}
+        {
+          sectionInformation.description
+        }
       </p>
 
       <span className="project-section-coming-soon">
-        ستُبنى هذه الوحدة في المرحلة القادمة.
+        ستُبنى هذه الوحدة في المرحلة
+        القادمة.
       </span>
     </main>
   );
@@ -314,23 +358,30 @@ function getProjectStatistics(
   project: Project,
 ): ProjectStatistic[] {
   const duration =
-    project.defaultEpisodeDurationMinutes;
+    project
+      .defaultEpisodeDurationMinutes;
 
   const sceneRange =
     formatSceneRange(project);
 
-  if (project.projectType === "series") {
+  if (
+    project.projectType === "series"
+  ) {
     return [
       {
         label: "عدد المواسم",
         value: String(
-          project.plannedSeasonCount ?? "—",
+          project
+            .plannedSeasonCount ??
+            "—",
         ),
       },
       {
         label: "عدد الحلقات",
         value: String(
-          project.plannedEpisodeCount ?? "—",
+          project
+            .plannedEpisodeCount ??
+            "—",
         ),
       },
       {
@@ -405,10 +456,12 @@ function formatSceneRange(
   project: Project,
 ): string {
   const minimum =
-    project.defaultMinimumScenesPerEpisode;
+    project
+      .defaultMinimumScenesPerEpisode;
 
   const maximum =
-    project.defaultMaximumScenesPerEpisode;
+    project
+      .defaultMaximumScenesPerEpisode;
 
   if (
     minimum === null &&
@@ -424,7 +477,9 @@ function formatSceneRange(
     return `${minimum} – ${maximum}`;
   }
 
-  return String(minimum ?? maximum);
+  return String(
+    minimum ?? maximum,
+  );
 }
 
 function getProjectTypeLabel(
@@ -476,7 +531,9 @@ interface SectionInformation {
 }
 
 function getSectionInformation(
-  section: ProjectWorkspaceSection,
+  section:
+    ProjectWorkspaceSection,
+
   projectType: ProjectType,
 ): SectionInformation {
   switch (section) {
@@ -521,10 +578,12 @@ function getSectionInformation(
                 "stage_play"
               ? "بنية المسرحية"
               : "بنية العمل",
+
         description:
           projectType === "series"
             ? "تنظيم المواسم والحلقات وترتيبها."
             : "تنظيم الأجزاء البنيوية للعمل الدرامي.",
+
         symbol: "ب",
       };
 
@@ -570,5 +629,7 @@ function formatDate(
     {
       dateStyle: "medium",
     },
-  ).format(new Date(value));
+  ).format(
+    new Date(value),
+  );
 }

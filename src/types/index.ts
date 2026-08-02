@@ -1,5 +1,6 @@
 export * from "./common";
 export * from "./project";
+export * from "./project-story";
 export * from "./season";
 export * from "./episode";
 export * from "./scene";
