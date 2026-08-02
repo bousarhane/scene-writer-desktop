@@ -62,11 +62,21 @@ export class CharacterRelationService {
       customLabel,
     );
 
-    await this.ensureRelationDoesNotExist(
-      input.projectId,
-      input.sourceCharacterId,
-      input.targetCharacterId,
-    );
+    await this.ensureRelationDoesNotExist({
+      projectId:
+        input.projectId,
+
+      firstCharacterId:
+        input.sourceCharacterId,
+
+      secondCharacterId:
+        input.targetCharacterId,
+
+      relationType:
+        input.relationType,
+
+      customLabel,
+    });
 
     const now =
       new Date().toISOString();
@@ -133,17 +143,24 @@ export class CharacterRelationService {
       customLabel,
     );
 
-    if (
-      input.targetCharacterId !==
-      existingRelation.targetCharacterId
-    ) {
-      await this.ensureRelationDoesNotExist(
+    await this.ensureRelationDoesNotExist({
+      projectId:
         existingRelation.projectId,
+
+      firstCharacterId:
         existingRelation.sourceCharacterId,
+
+      secondCharacterId:
         input.targetCharacterId,
+
+      relationType:
+        input.relationType,
+
+      customLabel,
+
+      excludedRelationId:
         existingRelation.id,
-      );
-    }
+    });
 
     const updatedRelation:
       CharacterRelation = {
@@ -180,48 +197,82 @@ export class CharacterRelationService {
   }
 
   private async ensureRelationDoesNotExist(
-    projectId: UUID,
-    firstCharacterId: UUID,
-    secondCharacterId: UUID,
-    excludedRelationId?: UUID,
+    input: {
+      projectId: UUID;
+
+      firstCharacterId: UUID;
+      secondCharacterId: UUID;
+
+      relationType:
+        CharacterRelationType;
+
+      customLabel: string | null;
+
+      excludedRelationId?: UUID;
+    },
   ): Promise<void> {
     const relations =
       await this.repository
         .findByCharacterId(
-          projectId,
-          firstCharacterId,
+          input.projectId,
+          input.firstCharacterId,
         );
 
     const duplicate =
       relations.some((relation) => {
         if (
           relation.id ===
-          excludedRelationId
+          input.excludedRelationId
         ) {
           return false;
         }
 
-        const sameDirection =
-          relation.sourceCharacterId ===
-            firstCharacterId &&
-          relation.targetCharacterId ===
-            secondCharacterId;
+        if (
+          !connectsSameCharacters(
+            relation,
+            input.firstCharacterId,
+            input.secondCharacterId,
+          )
+        ) {
+          return false;
+        }
 
-        const oppositeDirection =
-          relation.sourceCharacterId ===
-            secondCharacterId &&
-          relation.targetCharacterId ===
-            firstCharacterId;
+        if (
+          relation.relationType !==
+          input.relationType
+        ) {
+          return false;
+        }
+
+        if (
+          input.relationType !==
+          "custom"
+        ) {
+          return true;
+        }
 
         return (
-          sameDirection ||
-          oppositeDirection
+          normalizeComparableText(
+            relation.customLabel,
+          ) ===
+          normalizeComparableText(
+            input.customLabel,
+          )
         );
       });
 
     if (duplicate) {
+      const relationLabel =
+        input.relationType ===
+        "custom"
+          ? input.customLabel ??
+            "العلاقة الخاصة"
+          : getRelationTypeLabel(
+              input.relationType,
+            );
+
       throw new Error(
-        "توجد علاقة مسجلة مسبقًا بين الشخصيتين.",
+        `العلاقة «${relationLabel}» مسجلة مسبقًا بين الشخصيتين.`,
       );
     }
   }
@@ -256,6 +307,29 @@ export class CharacterRelationService {
   }
 }
 
+function connectsSameCharacters(
+  relation: CharacterRelation,
+  firstCharacterId: UUID,
+  secondCharacterId: UUID,
+): boolean {
+  const sameDirection =
+    relation.sourceCharacterId ===
+      firstCharacterId &&
+    relation.targetCharacterId ===
+      secondCharacterId;
+
+  const oppositeDirection =
+    relation.sourceCharacterId ===
+      secondCharacterId &&
+    relation.targetCharacterId ===
+      firstCharacterId;
+
+  return (
+    sameDirection ||
+    oppositeDirection
+  );
+}
+
 function normalizeOptionalText(
   value: string | null | undefined,
 ): string | null {
@@ -270,4 +344,47 @@ function normalizeOptionalText(
     value.trim();
 
   return normalized || null;
+}
+
+function normalizeComparableText(
+  value: string | null,
+): string {
+  return (value ?? "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLocaleLowerCase();
+}
+
+function getRelationTypeLabel(
+  relationType:
+    CharacterRelationType,
+): string {
+  switch (relationType) {
+    case "parent":
+      return "أب أو أم";
+
+    case "child":
+      return "ابن أو ابنة";
+
+    case "spouse":
+      return "زوج أو زوجة";
+
+    case "sibling":
+      return "أخ أو أخت";
+
+    case "friend":
+      return "صديق";
+
+    case "enemy":
+      return "خصم";
+
+    case "colleague":
+      return "زميل";
+
+    case "relative":
+      return "قريب";
+
+    case "custom":
+      return "علاقة خاصة";
+  }
 }

@@ -29,3 +29,11 @@ export type {
 export {
   SqliteCharacterRelationRepository,
 } from "./SqliteCharacterRelationRepository";
+
+export type {
+  LocationRepository,
+} from "./LocationRepository";
+
+export {
+  SqliteLocationRepository,
+} from "./SqliteLocationRepository";
