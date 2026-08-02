@@ -250,3 +250,40 @@
     flex-direction: column;
   }
 }
+.story-save-status.is-saving {
+  color: #465f82;
+  background: rgba(80, 116, 163, 0.12);
+}
+
+.story-save-status.is-error {
+  color: #912f2f;
+  background: rgba(184, 67, 67, 0.12);
+}
+
+.story-save-status.is-saved {
+  color: #477553;
+  background: rgba(91, 154, 106, 0.11);
+}
+
+.story-editor-error strong,
+.story-editor-error span {
+  display: block;
+}
+
+.story-editor-error strong {
+  margin-bottom: 5px;
+}
+
+.story-editor-footer > div {
+  min-width: 0;
+}
+
+.story-editor-footer strong,
+.story-editor-footer span {
+  display: block;
+}
+
+.story-editor-footer strong {
+  margin-bottom: 5px;
+  color: #35393f;
+}

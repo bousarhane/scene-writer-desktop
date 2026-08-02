@@ -5,6 +5,7 @@ import type {
 
 import {
   useProjectStory,
+  type ProjectStorySaveStatus,
 } from "./useProjectStory";
 
 import "./project-story.css";
@@ -22,6 +23,7 @@ export function ProjectStoryEditor({
     isSaving,
     isDirty,
     error,
+    saveStatus,
     updateContent,
     saveStory,
     restoreSavedContent,
@@ -65,17 +67,9 @@ export function ProjectStoryEditor({
         </div>
 
         <div className="story-editor-header-actions">
-          <span
-            className={
-              isDirty
-                ? "story-save-status is-dirty"
-                : "story-save-status"
-            }
-          >
-            {isDirty
-              ? "توجد تغييرات غير محفوظة"
-              : "جميع التغييرات محفوظة"}
-          </span>
+          <SaveStatus
+            status={saveStatus}
+          />
 
           <button
             type="button"
@@ -83,7 +77,9 @@ export function ProjectStoryEditor({
             disabled={
               !isDirty || isSaving
             }
-            onClick={restoreSavedContent}
+            onClick={
+              restoreSavedContent
+            }
           >
             التراجع عن التغييرات
           </button>
@@ -97,6 +93,7 @@ export function ProjectStoryEditor({
             onClick={() => {
               void saveStory();
             }}
+            title="حفظ الحكاية — Ctrl + S"
           >
             {isSaving
               ? "جارٍ الحفظ..."
@@ -110,7 +107,11 @@ export function ProjectStoryEditor({
           className="story-editor-error"
           role="alert"
         >
-          {error}
+          <strong>
+            تعذر حفظ الحكاية.
+          </strong>
+
+          <span>{error}</span>
         </div>
       )}
 
@@ -175,7 +176,9 @@ export function ProjectStoryEditor({
         <StoryField
           title="الصراع المركزي"
           description="القوة الأساسية التي تحرك الحكاية وتضع الشخصيات في مواجهة مستمرة."
-          value={content.centralConflict}
+          value={
+            content.centralConflict
+          }
           placeholder="ما جوهر الصراع في هذا العمل؟"
           rows={5}
           onChange={(value) => {
@@ -189,7 +192,9 @@ export function ProjectStoryEditor({
         <StoryField
           title="نقطة الانطلاق"
           description="الوضع الأول الذي تبدأ منه الحكاية والحدث الذي يخلخل توازن الشخصيات."
-          value={content.startingPoint}
+          value={
+            content.startingPoint
+          }
           placeholder="كيف تبدأ الحكاية؟ وما الحدث الذي يطلقها؟"
           rows={6}
           onChange={(value) => {
@@ -219,7 +224,9 @@ export function ProjectStoryEditor({
         <StoryField
           title="ملاحظات الكاتب"
           description="مساحة حرة للأفكار والاحتمالات والملاحظات المرتبطة بتطوير الحكاية."
-          value={content.writerNotes}
+          value={
+            content.writerNotes
+          }
           placeholder="أضف ملاحظاتك وأفكارك..."
           rows={7}
           fullWidth
@@ -233,11 +240,19 @@ export function ProjectStoryEditor({
       </section>
 
       <footer className="story-editor-footer">
-        <span>
-          {isDirty
-            ? "لم تُحفظ آخر التغييرات بعد."
-            : "الحكاية محفوظة في قاعدة البيانات المحلية."}
-        </span>
+        <div>
+          <strong>
+            {getFooterTitle(
+              saveStatus,
+            )}
+          </strong>
+
+          <span>
+            {getFooterDescription(
+              saveStatus,
+            )}
+          </span>
+        </div>
 
         <button
           type="button"
@@ -248,6 +263,7 @@ export function ProjectStoryEditor({
           onClick={() => {
             void saveStory();
           }}
+          title="حفظ الحكاية — Ctrl + S"
         >
           {isSaving
             ? "جارٍ الحفظ..."
@@ -258,6 +274,104 @@ export function ProjectStoryEditor({
   );
 }
 
+interface SaveStatusProps {
+  status: ProjectStorySaveStatus;
+}
+
+function SaveStatus({
+  status,
+}: SaveStatusProps) {
+  const information =
+    getSaveStatusInformation(
+      status,
+    );
+
+  return (
+    <span
+      className={
+        `story-save-status ${information.className}`
+      }
+      role="status"
+      aria-live="polite"
+    >
+      {information.label}
+    </span>
+  );
+}
+
+interface SaveStatusInformation {
+  label: string;
+  className: string;
+}
+
+function getSaveStatusInformation(
+  status: ProjectStorySaveStatus,
+): SaveStatusInformation {
+  switch (status) {
+    case "saving":
+      return {
+        label: "جارٍ الحفظ...",
+        className: "is-saving",
+      };
+
+    case "dirty":
+      return {
+        label:
+          "سيتم الحفظ تلقائيًا",
+        className: "is-dirty",
+      };
+
+    case "error":
+      return {
+        label: "تعذر الحفظ",
+        className: "is-error",
+      };
+
+    case "saved":
+      return {
+        label:
+          "جميع التغييرات محفوظة",
+        className: "is-saved",
+      };
+  }
+}
+
+function getFooterTitle(
+  status: ProjectStorySaveStatus,
+): string {
+  switch (status) {
+    case "saving":
+      return "جارٍ حفظ الحكاية";
+
+    case "dirty":
+      return "تغييرات غير محفوظة";
+
+    case "error":
+      return "فشل الحفظ";
+
+    case "saved":
+      return "الحكاية محفوظة";
+  }
+}
+
+function getFooterDescription(
+  status: ProjectStorySaveStatus,
+): string {
+  switch (status) {
+    case "saving":
+      return "يرجى الانتظار حتى اكتمال الحفظ.";
+
+    case "dirty":
+      return "سيحفظ التطبيق التغييرات تلقائيًا بعد توقفك عن الكتابة.";
+
+    case "error":
+      return "يمكنك إعادة المحاولة بالضغط على زر الحفظ أو Ctrl + S.";
+
+    case "saved":
+      return "آخر التغييرات محفوظة في قاعدة البيانات المحلية.";
+  }
+}
+
 interface StoryFieldProps {
   title: string;
   description: string;
@@ -265,7 +379,9 @@ interface StoryFieldProps {
   placeholder: string;
   rows: number;
   fullWidth?: boolean;
-  onChange: (value: string) => void;
+  onChange: (
+    value: string,
+  ) => void;
 }
 
 function StoryField({
@@ -295,7 +411,9 @@ function StoryField({
         value={value}
         placeholder={placeholder}
         onChange={(event) => {
-          onChange(event.target.value);
+          onChange(
+            event.target.value,
+          );
         }}
       />
     </label>
