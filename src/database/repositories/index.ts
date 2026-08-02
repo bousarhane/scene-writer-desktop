@@ -37,3 +37,19 @@ export type {
 export {
   SqliteLocationRepository,
 } from "./SqliteLocationRepository";
+
+export type {
+  SeasonRepository,
+} from "./SeasonRepository";
+
+export {
+  SqliteSeasonRepository,
+} from "./SqliteSeasonRepository";
+
+export type {
+  EpisodeRepository,
+} from "./EpisodeRepository";
+
+export {
+  SqliteEpisodeRepository,
+} from "./SqliteEpisodeRepository";

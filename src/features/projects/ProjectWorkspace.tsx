@@ -24,6 +24,10 @@ import {
   ProjectStoryEditor,
 } from "../stories/ProjectStoryEditor";
 
+import {
+  ProjectStructureWorkspace,
+} from "../structure/ProjectStructureWorkspace";
+
 export type ProjectWorkspaceSection =
   | "dashboard"
   | "story"
@@ -215,6 +219,16 @@ export function ProjectWorkspace({
   ) {
     return (
       <LocationsWorkspace
+        project={project}
+      />
+    );
+  }
+
+  if (
+    activeSection === "structure"
+  ) {
+    return (
+      <ProjectStructureWorkspace
         project={project}
       />
     );
@@ -603,14 +617,20 @@ function getSectionInformation(
           projectType === "series"
             ? "المواسم والحلقات"
             : projectType ===
-                "stage_play"
-              ? "بنية المسرحية"
-              : "بنية العمل",
+                "single_episode"
+              ? "بنية الحلقة"
+              : projectType ===
+                  "stage_play"
+                ? "بنية المسرحية"
+                : "بنية العمل",
 
         description:
           projectType === "series"
             ? "تنظيم المواسم والحلقات وترتيبها."
-            : "تنظيم الأجزاء البنيوية للعمل الدرامي.",
+            : projectType ===
+                "single_episode"
+              ? "إدارة بيانات الحلقة وملخصها وحالتها."
+              : "تنظيم الأجزاء البنيوية للعمل الدرامي.",
 
         symbol: "ب",
       };
