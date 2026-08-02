@@ -86,13 +86,14 @@ export class CharacterService {
     input: CreateCharacterInput,
   ): Promise<Character> {
     const name =
-      input.name.trim();
+      normalizeRequiredName(
+        input.name,
+      );
 
-    if (!name) {
-      throw new CharacterValidationError([
-        "اسم الشخصية إلزامي.",
-      ]);
-    }
+    await this.ensureUniqueName(
+      input.projectId,
+      name,
+    );
 
     const now =
       new Date().toISOString();
@@ -108,6 +109,7 @@ export class CharacterService {
       projectId: input.projectId,
 
       name,
+
       shortName:
         normalizeOptionalText(
           input.shortName,
@@ -182,13 +184,15 @@ export class CharacterService {
       await this.requireCharacter(id);
 
     const name =
-      input.name.trim();
+      normalizeRequiredName(
+        input.name,
+      );
 
-    if (!name) {
-      throw new CharacterValidationError([
-        "اسم الشخصية إلزامي.",
-      ]);
-    }
+    await this.ensureUniqueName(
+      character.projectId,
+      name,
+      character.id,
+    );
 
     const updatedCharacter: Character = {
       ...character,
@@ -261,13 +265,43 @@ export class CharacterService {
     await this.repository.delete(id);
   }
 
+  private async ensureUniqueName(
+    projectId: UUID,
+    name: string,
+    excludedCharacterId?: UUID,
+  ): Promise<void> {
+    const characters =
+      await this.repository
+        .findByProjectId(projectId);
+
+    const normalizedName =
+      normalizeNameForComparison(
+        name,
+      );
+
+    const duplicate =
+      characters.some(
+        (character) =>
+          character.id !==
+            excludedCharacterId &&
+          normalizeNameForComparison(
+            character.name,
+          ) === normalizedName,
+      );
+
+    if (duplicate) {
+      throw new CharacterValidationError([
+        `توجد في المشروع شخصية تحمل الاسم «${name}».`,
+      ]);
+    }
+  }
+
   private async requireCharacter(
     id: UUID,
   ): Promise<Character> {
     const character =
-      await this.repository.findById(
-        id,
-      );
+      await this.repository
+        .findById(id);
 
     if (character === null) {
       throw new Error(
@@ -277,6 +311,21 @@ export class CharacterService {
 
     return character;
   }
+}
+
+function normalizeRequiredName(
+  value: string,
+): string {
+  const normalized =
+    normalizeSpacing(value);
+
+  if (!normalized) {
+    throw new CharacterValidationError([
+      "اسم الشخصية إلزامي.",
+    ]);
+  }
+
+  return normalized;
 }
 
 function normalizeOptionalText(
@@ -293,4 +342,19 @@ function normalizeOptionalText(
     value.trim();
 
   return normalized || null;
+}
+
+function normalizeNameForComparison(
+  value: string,
+): string {
+  return normalizeSpacing(value)
+    .toLocaleLowerCase();
+}
+
+function normalizeSpacing(
+  value: string,
+): string {
+  return value
+    .trim()
+    .replace(/\s+/g, " ");
 }

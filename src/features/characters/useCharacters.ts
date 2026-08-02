@@ -61,6 +61,10 @@ export function useCharacters(
       "projectId"
     >,
   ): Promise<Character | null> {
+    if (isSaving) {
+      return null;
+    }
+
     setIsSaving(true);
     setError(null);
 
@@ -95,6 +99,10 @@ export function useCharacters(
     id: string,
     input: UpdateCharacterInput,
   ): Promise<Character | null> {
+    if (isSaving) {
+      return null;
+    }
+
     setIsSaving(true);
     setError(null);
 
@@ -131,6 +139,10 @@ export function useCharacters(
   async function deleteCharacter(
     id: string,
   ): Promise<boolean> {
+    if (isSaving) {
+      return false;
+    }
+
     setIsSaving(true);
     setError(null);
 
@@ -158,6 +170,10 @@ export function useCharacters(
     }
   }
 
+  function clearError(): void {
+    setError(null);
+  }
+
   return {
     characters,
 
@@ -169,15 +185,28 @@ export function useCharacters(
     createCharacter,
     updateCharacter,
     deleteCharacter,
+    clearError,
   };
 }
 
 function getErrorMessage(
   error: unknown,
 ): string {
-  if (error instanceof Error) {
-    return error.message;
+  const message =
+    error instanceof Error
+      ? error.message
+      : String(error);
+
+  if (
+    message.includes(
+      "UNIQUE constraint failed",
+    ) &&
+    message.includes(
+      "characters",
+    )
+  ) {
+    return "توجد في المشروع شخصية تحمل هذا الاسم.";
   }
 
-  return String(error);
+  return message;
 }

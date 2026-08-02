@@ -41,7 +41,7 @@
   display: grid;
 
   grid-template-columns:
-    minmax(240px, 300px)
+    minmax(250px, 310px)
     minmax(0, 1fr);
 
   gap: 18px;
@@ -60,6 +60,7 @@
 }
 
 .characters-list-panel {
+  align-self: start;
   overflow: hidden;
 }
 
@@ -91,12 +92,50 @@
   font-weight: 700;
 }
 
+.characters-list-tools {
+  display: grid;
+
+  gap: 8px;
+  padding: 12px;
+
+  border-bottom: 1px solid #e5e8ec;
+  background: #fafbfc;
+}
+
+.characters-list-tools input,
+.characters-list-tools select {
+  width: 100%;
+
+  padding: 9px 10px;
+
+  border: 1px solid #d2d7dd;
+  border-radius: 8px;
+
+  color: #35393e;
+  background: #ffffff;
+
+  outline: none;
+}
+
+.characters-list-tools input:focus,
+.characters-list-tools select:focus {
+  border-color: #84654b;
+
+  box-shadow:
+    0 0 0 3px
+    rgba(132, 101, 75, 0.11);
+}
+
 .characters-list {
   display: flex;
   flex-direction: column;
 
+  max-height: 620px;
+
   gap: 4px;
   padding: 8px;
+
+  overflow-y: auto;
 }
 
 .characters-list-state {
@@ -104,6 +143,7 @@
 
   color: #747980;
   text-align: center;
+  line-height: 1.7;
 }
 
 .character-list-item {
@@ -197,6 +237,30 @@
   margin: 5px 0 0;
 
   color: #292c30;
+}
+
+.character-editor-status {
+  display: flex;
+  align-items: center;
+
+  gap: 9px;
+}
+
+.character-save-status {
+  padding: 7px 10px;
+
+  border-radius: 999px;
+
+  color: #477553;
+  background: rgba(91, 154, 106, 0.11);
+
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.character-save-status.is-dirty {
+  color: #8a6334;
+  background: rgba(181, 132, 69, 0.13);
 }
 
 .character-form {
@@ -329,11 +393,24 @@
     grid-template-columns: 1fr;
   }
 
-  .character-form-field--full {
-    grid-column: auto;
-  }
-
+  .character-form-field--full,
   .character-form-actions {
     grid-column: auto;
+  }
+}
+
+@media (max-width: 680px) {
+  .characters-workspace {
+    width: min(100% - 24px, 1180px);
+  }
+
+  .characters-header,
+  .character-editor-heading {
+    flex-direction: column;
+  }
+
+  .character-editor-status {
+    width: 100%;
+    flex-wrap: wrap;
   }
 }
