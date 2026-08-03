@@ -1,4 +1,4 @@
-import {
+﻿import {
   useCallback,
   useState,
 } from "react";
@@ -27,7 +27,6 @@ import {
 
 import type {
   Project,
-  ProjectType,
 } from "../types";
 
 import "../features/projects/create-project-dialog.css";
@@ -42,23 +41,26 @@ export function StudioShell() {
   const [
     activeView,
     setActiveView,
-  ] = useState<StudioView>(
-    "library",
-  );
+  ] =
+    useState<StudioView>(
+      "library",
+    );
 
   const [
     selectedProjectId,
     setSelectedProjectId,
-  ] = useState<string | null>(
-    null,
-  );
+  ] =
+    useState<string | null>(
+      null,
+    );
 
   const [
     currentProject,
     setCurrentProject,
-  ] = useState<Project | null>(
-    null,
-  );
+  ] =
+    useState<Project | null>(
+      null,
+    );
 
   const [
     activeProjectSection,
@@ -111,14 +113,17 @@ export function StudioShell() {
   function openProject(
     projectId: string,
   ): void {
-    const project =
-      projects.find(
-        (candidate) =>
-          candidate.id === projectId,
-      ) ?? null;
+    setSelectedProjectId(
+      projectId,
+    );
 
-    setSelectedProjectId(projectId);
-    setCurrentProject(project);
+    setCurrentProject(
+      projects.find(
+        (project) =>
+          project.id ===
+          projectId,
+      ) ?? null,
+    );
 
     setActiveProjectSection(
       "dashboard",
@@ -143,7 +148,9 @@ export function StudioShell() {
     void {
     setActiveView("library");
 
-    setIsCreateDialogOpen(true);
+    setIsCreateDialogOpen(
+      true,
+    );
   }
 
   function closeCreateProjectDialog():
@@ -152,7 +159,9 @@ export function StudioShell() {
       return;
     }
 
-    setIsCreateDialogOpen(false);
+    setIsCreateDialogOpen(
+      false,
+    );
   }
 
   async function handleCreateProject(
@@ -216,11 +225,16 @@ export function StudioShell() {
     >
       <StudioSidebar
         mode={
-          activeView === "project"
+          activeView ===
+          "project"
             ? "project"
             : "library"
         }
         activeView={activeView}
+        projects={projects}
+        isLoadingProjects={
+          isLoading
+        }
         currentProject={
           currentProject
         }
@@ -235,6 +249,9 @@ export function StudioShell() {
         }
         onCreateProject={
           openCreateProjectDialog
+        }
+        onOpenProject={
+          openProject
         }
         onSelectProjectSection={
           setActiveProjectSection
@@ -259,13 +276,14 @@ export function StudioShell() {
           {activeView ===
             "library" && (
             <LibraryView
-              projects={projects}
-              isLoading={isLoading}
+              projectCount={
+                projects.length
+              }
+              isLoading={
+                isLoading
+              }
               onCreateProject={
                 openCreateProjectDialog
-              }
-              onOpenProject={
-                openProject
               }
             />
           )}
@@ -317,24 +335,20 @@ export function StudioShell() {
 }
 
 interface LibraryViewProps {
-  projects: Project[];
+  projectCount: number;
   isLoading: boolean;
 
   onCreateProject:
     () => void;
-
-  onOpenProject:
-    (projectId: string) => void;
 }
 
 function LibraryView({
-  projects,
+  projectCount,
   isLoading,
   onCreateProject,
-  onOpenProject,
 }: LibraryViewProps) {
   const hasProjects =
-    projects.length > 0;
+    projectCount > 0;
 
   return (
     <main className="library-view">
@@ -348,7 +362,7 @@ function LibraryView({
             {isLoading
               ? "جارٍ تحميل المشاريع..."
               : formatProjectCount(
-                  projects.length,
+                  projectCount,
                 )}
           </p>
         </div>
@@ -394,81 +408,20 @@ function LibraryView({
         )}
 
       {hasProjects && (
-        <section
-          className="project-library-grid"
-          aria-label="المشاريع المحفوظة"
-        >
-          {projects.map(
-            (project) => (
-              <button
-                key={project.id}
-                type="button"
-                className="project-library-card"
-                onClick={() => {
-                  onOpenProject(
-                    project.id,
-                  );
-                }}
-              >
-                <span className="project-library-card-topline">
-                  <span className="project-library-type">
-                    {getProjectTypeLabel(
-                      project.projectType,
-                    )}
-                  </span>
+        <section className="library-empty-state">
+          <div className="empty-state-mark">
+            {projectCount}
+          </div>
 
-                  <span className="project-library-status">
-                    {getProjectStatusLabel(
-                      project.status,
-                    )}
-                  </span>
-                </span>
+          <h2>
+            مشاريعك محفوظة محليًا
+          </h2>
 
-                <span className="project-library-card-main">
-                  <span className="project-library-mark">
-                    {getProjectInitial(
-                      project.title,
-                    )}
-                  </span>
-
-                  <span className="project-library-copy">
-                    <strong>
-                      {project.title}
-                    </strong>
-
-                    <small>
-                      {project.subtitle ||
-                        project.description ||
-                        "مشروع محفوظ محليًا"}
-                    </small>
-                  </span>
-                </span>
-
-                <span className="project-library-meta">
-                  <span>
-                    {formatProjectDetails(
-                      project,
-                    )}
-                  </span>
-
-                  <span>
-                    {formatProjectDate(
-                      project.lastOpenedAt ??
-                        project.updatedAt ??
-                        project.createdAt,
-                    )}
-                  </span>
-                </span>
-
-                <span className="project-library-open">
-                  فتح المشروع
-                  <span aria-hidden="true">
-                    ←
-                  </span>
-                </span>
-              </button>
-            ),
-          )}
+          <p>
+            افتح مشروعًا من الشريط
+            الجانبي لمتابعة الكتابة،
+            أو أنشئ مشروعًا جديدًا.
+          </p>
         </section>
       )}
     </main>
@@ -509,158 +462,4 @@ function formatProjectCount(
   }
 
   return `يوجد ${projectCount} مشاريع محفوظة.`;
-}
-
-function getProjectInitial(
-  title: string,
-): string {
-  const normalizedTitle =
-    title.trim();
-
-  return normalizedTitle
-    ? normalizedTitle.charAt(0)
-    : "م";
-}
-
-function getProjectTypeLabel(
-  projectType: ProjectType,
-): string {
-  switch (projectType) {
-    case "series":
-      return "مسلسل تلفزيوني";
-
-    case "film":
-      return "فيلم سينمائي";
-
-    case "short_film":
-      return "فيلم قصير";
-
-    case "single_episode":
-      return "حلقة منفردة";
-
-    case "stage_play":
-      return "مسرحية";
-  }
-}
-
-function getProjectStatusLabel(
-  status: string,
-): string {
-  switch (status) {
-    case "draft":
-      return "مسودة";
-
-    case "in_progress":
-      return "قيد الإنجاز";
-
-    case "completed":
-      return "مكتمل";
-
-    case "archived":
-      return "مؤرشف";
-
-    default:
-      return status;
-  }
-}
-
-function formatProjectDetails(
-  project: Project,
-): string {
-  if (
-    project.projectType === "series"
-  ) {
-    const episodeCount =
-      project.plannedEpisodeCount ??
-      "—";
-
-    if (
-      project.seriesStructure ===
-      "multi_season"
-    ) {
-      const seasonCount =
-        project.plannedSeasonCount ??
-        "—";
-
-      return `${seasonCount} موسم · ${episodeCount} حلقة`;
-    }
-
-    return `${episodeCount} حلقة`;
-  }
-
-  if (
-    project.projectType ===
-    "single_episode"
-  ) {
-    const duration =
-      project
-        .defaultEpisodeDurationMinutes;
-
-    return duration === null
-      ? "حلقة منفردة"
-      : `${duration} دقيقة`;
-  }
-
-  const duration =
-    project
-      .defaultEpisodeDurationMinutes;
-
-  const minimumScenes =
-    project
-      .defaultMinimumScenesPerEpisode;
-
-  const maximumScenes =
-    project
-      .defaultMaximumScenesPerEpisode;
-
-  const parts: string[] = [];
-
-  if (duration !== null) {
-    parts.push(
-      `${duration} دقيقة`,
-    );
-  }
-
-  if (
-    minimumScenes !== null &&
-    maximumScenes !== null
-  ) {
-    parts.push(
-      `${minimumScenes}–${maximumScenes} مشهدًا`,
-    );
-  }
-
-  return parts.length > 0
-    ? parts.join(" · ")
-    : getProjectTypeLabel(
-        project.projectType,
-      );
-}
-
-function formatProjectDate(
-  value: string | null,
-): string {
-  if (value === null) {
-    return "لم يُفتح بعد";
-  }
-
-  const date =
-    new Date(value);
-
-  if (
-    Number.isNaN(
-      date.getTime(),
-    )
-  ) {
-    return value;
-  }
-
-  return new Intl.DateTimeFormat(
-    "ar-MA",
-    {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    },
-  ).format(date);
 }

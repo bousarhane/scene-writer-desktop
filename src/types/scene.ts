@@ -1,4 +1,7 @@
-import type { TimestampedEntity, UUID } from "./common";
+import type {
+  TimestampedEntity,
+  UUID,
+} from "./common";
 
 export type InteriorExterior =
   | "interior"
@@ -24,28 +27,36 @@ export type SceneStatus =
   | "approved"
   | "omitted";
 
-export interface Scene extends TimestampedEntity {
+export interface Scene
+  extends TimestampedEntity
+{
   id: UUID;
   projectId: UUID;
-  episodeId: UUID;
+
+  episodeId: UUID | null;
+  locationId: UUID | null;
 
   sceneNumber: string;
   title: string | null;
 
   heading: string;
 
-  interiorExterior: InteriorExterior;
-
-  locationId: UUID | null;
+  interiorExterior:
+    InteriorExterior;
 
   timeOfDay: TimeOfDay;
-  customTimeOfDay: string | null;
+  customTimeOfDay:
+    string | null;
 
   synopsis: string | null;
-  dramaticPurpose: string | null;
+
+  dramaticPurpose:
+    string | null;
+
   notes: string | null;
 
-  estimatedDurationSeconds: number | null;
+  estimatedDurationSeconds:
+    number | null;
 
   status: SceneStatus;
   orderIndex: number;

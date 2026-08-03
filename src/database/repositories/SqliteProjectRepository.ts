@@ -1,13 +1,20 @@
-import { getDatabase } from "../sqlite";
+import {
+  getDatabase,
+} from "../sqlite";
+
 import type {
+  AppLanguage,
   Project,
   ProjectStatus,
   ProjectType,
-  AppLanguage,
+  SeriesStructure,
   TextDirection,
   UUID,
 } from "../../types";
-import type { ProjectRepository } from "./ProjectRepository";
+
+import type {
+  ProjectRepository,
+} from "./ProjectRepository";
 
 interface ProjectRow {
   id: string;
@@ -16,134 +23,194 @@ interface ProjectRow {
   subtitle: string | null;
 
   project_type: ProjectType;
+
+  series_structure:
+    SeriesStructure | null;
+
   status: ProjectStatus;
 
   language: AppLanguage;
-  text_direction: TextDirection;
+
+  text_direction:
+    TextDirection;
 
   author_name: string | null;
   description: string | null;
 
-  planned_season_count: number | null;
-  planned_episode_count: number | null;
+  planned_season_count:
+    number | null;
 
-  default_episode_duration_minutes: number | null;
-  default_minimum_scenes_per_episode: number | null;
-  default_maximum_scenes_per_episode: number | null;
+  planned_episode_count:
+    number | null;
 
-  last_opened_at: string | null;
+  default_episode_duration_minutes:
+    number | null;
+
+  default_minimum_scenes_per_episode:
+    number | null;
+
+  default_maximum_scenes_per_episode:
+    number | null;
+
+  last_opened_at:
+    string | null;
 
   created_at: string;
   updated_at: string;
 }
 
-function mapProjectRow(row: ProjectRow): Project {
+function mapProjectRow(
+  row: ProjectRow,
+): Project {
   return {
     id: row.id,
 
     title: row.title,
     subtitle: row.subtitle,
 
-    projectType: row.project_type,
+    projectType:
+      row.project_type,
+
+    seriesStructure:
+      row.series_structure,
+
     status: row.status,
 
-    language: row.language,
-    textDirection: row.text_direction,
+    language:
+      row.language,
 
-    authorName: row.author_name,
-    description: row.description,
+    textDirection:
+      row.text_direction,
 
-    plannedSeasonCount: row.planned_season_count,
-    plannedEpisodeCount: row.planned_episode_count,
+    authorName:
+      row.author_name,
+
+    description:
+      row.description,
+
+    plannedSeasonCount:
+      row.planned_season_count,
+
+    plannedEpisodeCount:
+      row.planned_episode_count,
 
     defaultEpisodeDurationMinutes:
-      row.default_episode_duration_minutes,
+      row
+        .default_episode_duration_minutes,
 
     defaultMinimumScenesPerEpisode:
-      row.default_minimum_scenes_per_episode,
+      row
+        .default_minimum_scenes_per_episode,
 
     defaultMaximumScenesPerEpisode:
-      row.default_maximum_scenes_per_episode,
+      row
+        .default_maximum_scenes_per_episode,
 
-    lastOpenedAt: row.last_opened_at,
+    lastOpenedAt:
+      row.last_opened_at,
 
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
+    createdAt:
+      row.created_at,
+
+    updatedAt:
+      row.updated_at,
   };
 }
 
 export class SqliteProjectRepository
-  implements ProjectRepository
-{
-  async findAll(): Promise<Project[]> {
-    const database = await getDatabase();
+  implements ProjectRepository {
+  async findAll():
+    Promise<Project[]> {
+    const database =
+      await getDatabase();
 
-    const rows = await database.select<ProjectRow[]>(
-      `
-        SELECT
-          id,
-          title,
-          subtitle,
-          project_type,
-          status,
-          language,
-          text_direction,
-          author_name,
-          description,
-          planned_season_count,
-          planned_episode_count,
-          default_episode_duration_minutes,
-          default_minimum_scenes_per_episode,
-          default_maximum_scenes_per_episode,
-          last_opened_at,
-          created_at,
-          updated_at
-        FROM projects
-        ORDER BY
-          COALESCE(last_opened_at, updated_at) DESC
-      `,
+    const rows =
+      await database.select<
+        ProjectRow[]
+      >(
+        `
+          SELECT
+            id,
+            title,
+            subtitle,
+            project_type,
+            series_structure,
+            status,
+            language,
+            text_direction,
+            author_name,
+            description,
+            planned_season_count,
+            planned_episode_count,
+            default_episode_duration_minutes,
+            default_minimum_scenes_per_episode,
+            default_maximum_scenes_per_episode,
+            last_opened_at,
+            created_at,
+            updated_at
+          FROM projects
+          ORDER BY
+            COALESCE(
+              last_opened_at,
+              updated_at
+            ) DESC
+        `,
+      );
+
+    return rows.map(
+      mapProjectRow,
     );
-
-    return rows.map(mapProjectRow);
   }
 
-  async findById(id: UUID): Promise<Project | null> {
-    const database = await getDatabase();
+  async findById(
+    id: UUID,
+  ): Promise<Project | null> {
+    const database =
+      await getDatabase();
 
-    const rows = await database.select<ProjectRow[]>(
-      `
-        SELECT
-          id,
-          title,
-          subtitle,
-          project_type,
-          status,
-          language,
-          text_direction,
-          author_name,
-          description,
-          planned_season_count,
-          planned_episode_count,
-          default_episode_duration_minutes,
-          default_minimum_scenes_per_episode,
-          default_maximum_scenes_per_episode,
-          last_opened_at,
-          created_at,
-          updated_at
-        FROM projects
-        WHERE id = ?
-        LIMIT 1
-      `,
-      [id],
-    );
+    const rows =
+      await database.select<
+        ProjectRow[]
+      >(
+        `
+          SELECT
+            id,
+            title,
+            subtitle,
+            project_type,
+            series_structure,
+            status,
+            language,
+            text_direction,
+            author_name,
+            description,
+            planned_season_count,
+            planned_episode_count,
+            default_episode_duration_minutes,
+            default_minimum_scenes_per_episode,
+            default_maximum_scenes_per_episode,
+            last_opened_at,
+            created_at,
+            updated_at
+          FROM projects
+          WHERE id = ?
+          LIMIT 1
+        `,
+        [id],
+      );
 
     const row = rows[0];
 
-    return row ? mapProjectRow(row) : null;
+    return row
+      ? mapProjectRow(row)
+      : null;
   }
 
-  async create(project: Project): Promise<void> {
-    const database = await getDatabase();
+  async create(
+    project: Project,
+  ): Promise<void> {
+    const database =
+      await getDatabase();
 
     await database.execute(
       `
@@ -152,6 +219,7 @@ export class SqliteProjectRepository
           title,
           subtitle,
           project_type,
+          series_structure,
           status,
           language,
           text_direction,
@@ -166,32 +234,53 @@ export class SqliteProjectRepository
           created_at,
           updated_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (
+          ?, ?, ?, ?, ?, ?,
+          ?, ?, ?, ?, ?, ?,
+          ?, ?, ?, ?, ?, ?
+        )
       `,
       [
         project.id,
         project.title,
         project.subtitle,
+
         project.projectType,
+        project.seriesStructure,
+
         project.status,
+
         project.language,
         project.textDirection,
+
         project.authorName,
         project.description,
+
         project.plannedSeasonCount,
         project.plannedEpisodeCount,
-        project.defaultEpisodeDurationMinutes,
-        project.defaultMinimumScenesPerEpisode,
-        project.defaultMaximumScenesPerEpisode,
+
+        project
+          .defaultEpisodeDurationMinutes,
+
+        project
+          .defaultMinimumScenesPerEpisode,
+
+        project
+          .defaultMaximumScenesPerEpisode,
+
         project.lastOpenedAt,
+
         project.createdAt,
         project.updatedAt,
       ],
     );
   }
 
-  async update(project: Project): Promise<void> {
-    const database = await getDatabase();
+  async update(
+    project: Project,
+  ): Promise<void> {
+    const database =
+      await getDatabase();
 
     await database.execute(
       `
@@ -200,6 +289,7 @@ export class SqliteProjectRepository
           title = ?,
           subtitle = ?,
           project_type = ?,
+          series_structure = ?,
           status = ?,
           language = ?,
           text_direction = ?,
@@ -217,29 +307,49 @@ export class SqliteProjectRepository
       [
         project.title,
         project.subtitle,
+
         project.projectType,
+        project.seriesStructure,
+
         project.status,
+
         project.language,
         project.textDirection,
+
         project.authorName,
         project.description,
+
         project.plannedSeasonCount,
         project.plannedEpisodeCount,
-        project.defaultEpisodeDurationMinutes,
-        project.defaultMinimumScenesPerEpisode,
-        project.defaultMaximumScenesPerEpisode,
+
+        project
+          .defaultEpisodeDurationMinutes,
+
+        project
+          .defaultMinimumScenesPerEpisode,
+
+        project
+          .defaultMaximumScenesPerEpisode,
+
         project.lastOpenedAt,
         project.updatedAt,
+
         project.id,
       ],
     );
   }
 
-  async delete(id: UUID): Promise<void> {
-    const database = await getDatabase();
+  async delete(
+    id: UUID,
+  ): Promise<void> {
+    const database =
+      await getDatabase();
 
     await database.execute(
-      "DELETE FROM projects WHERE id = ?",
+      `
+        DELETE FROM projects
+        WHERE id = ?
+      `,
       [id],
     );
   }

@@ -21,6 +21,10 @@ import {
 } from "../locations/LocationsWorkspace";
 
 import {
+  ScenesWorkspace,
+} from "../scenes/ScenesWorkspace";
+
+import {
   ProjectStoryEditor,
 } from "../stories/ProjectStoryEditor";
 
@@ -229,6 +233,16 @@ export function ProjectWorkspace({
   ) {
     return (
       <ProjectStructureWorkspace
+        project={project}
+      />
+    );
+  }
+
+  if (
+    activeSection === "scenes"
+  ) {
+    return (
+      <ScenesWorkspace
         project={project}
       />
     );

@@ -12,48 +12,77 @@ import {
 import type {
   Project,
   ProjectType,
+  SeriesStructure,
 } from "../../types";
 
 export interface CreateProjectInput {
   title: string;
+
+  authorName: string | null;
+
   projectType: ProjectType;
 
-  plannedSeasonCount: number | null;
-  plannedEpisodeCount: number | null;
+  seriesStructure:
+    SeriesStructure | null;
 
-  durationMinutes: number;
-  minimumScenes: number | null;
-  maximumScenes: number | null;
+  plannedSeasonCount:
+    number | null;
+
+  plannedEpisodeCount:
+    number | null;
+
+  durationMinutes:
+    number | null;
+
+  minimumScenes:
+    number | null;
+
+  maximumScenes:
+    number | null;
 }
 
 export function useProjects() {
-  const [projects, setProjects] =
-    useState<Project[]>([]);
+  const [
+    projects,
+    setProjects,
+  ] = useState<Project[]>([]);
 
-  const [isLoading, setIsLoading] =
-    useState(true);
+  const [
+    isLoading,
+    setIsLoading,
+  ] = useState(true);
 
-  const [error, setError] =
-    useState<string | null>(null);
+  const [
+    error,
+    setError,
+  ] = useState<string | null>(
+    null,
+  );
 
   const loadProjects =
-    useCallback(async (): Promise<void> => {
-      setIsLoading(true);
-      setError(null);
+    useCallback(
+      async (): Promise<void> => {
+        setIsLoading(true);
+        setError(null);
 
-      try {
-        const items =
-          await projectService.listProjects();
+        try {
+          const items =
+            await projectService
+              .listProjects();
 
-        setProjects(items);
-      } catch (caughtError) {
-        setError(
-          getErrorMessage(caughtError),
-        );
-      } finally {
-        setIsLoading(false);
-      }
-    }, []);
+          setProjects(items);
+        } catch (caughtError) {
+          setError(
+            getErrorMessage(
+              caughtError,
+            ),
+          );
+        } finally {
+          setIsLoading(false);
+        }
+      },
+      [],
+    );
 
   useEffect(() => {
     void loadProjects();
@@ -66,35 +95,46 @@ export function useProjects() {
 
     try {
       const project =
-        await projectService.createProject({
-          title: input.title,
-          projectType: input.projectType,
+        await projectService
+          .createProject({
+            title: input.title,
 
-          language: "ar",
-          textDirection: "rtl",
+            authorName:
+              input.authorName,
 
-          plannedSeasonCount:
-            input.plannedSeasonCount,
+            projectType:
+              input.projectType,
 
-          plannedEpisodeCount:
-            input.plannedEpisodeCount,
+            seriesStructure:
+              input.seriesStructure,
 
-          defaultEpisodeDurationMinutes:
-            input.durationMinutes,
+            language: "ar",
+            textDirection: "rtl",
 
-          defaultMinimumScenesPerEpisode:
-            input.minimumScenes,
+            plannedSeasonCount:
+              input.plannedSeasonCount,
 
-          defaultMaximumScenesPerEpisode:
-            input.maximumScenes,
-        });
+            plannedEpisodeCount:
+              input.plannedEpisodeCount,
+
+            defaultEpisodeDurationMinutes:
+              input.durationMinutes,
+
+            defaultMinimumScenesPerEpisode:
+              input.minimumScenes,
+
+            defaultMaximumScenesPerEpisode:
+              input.maximumScenes,
+          });
 
       await loadProjects();
 
       return project;
     } catch (caughtError) {
       setError(
-        getErrorMessage(caughtError),
+        getErrorMessage(
+          caughtError,
+        ),
       );
 
       return null;
@@ -107,14 +147,15 @@ export function useProjects() {
     setError(null);
 
     try {
-      await projectService.deleteProject(
-        projectId,
-      );
+      await projectService
+        .deleteProject(projectId);
 
       await loadProjects();
     } catch (caughtError) {
       setError(
-        getErrorMessage(caughtError),
+        getErrorMessage(
+          caughtError,
+        ),
       );
     }
   }
@@ -137,7 +178,9 @@ function getErrorMessage(
     error instanceof
     ProjectValidationError
   ) {
-    return error.errors.join("\n");
+    return error.errors.join(
+      "\n",
+    );
   }
 
   if (error instanceof Error) {

@@ -6,6 +6,7 @@ import {
 import type {
   Project,
   ProjectType,
+  SeriesStructure,
 } from "../../types";
 
 import {
@@ -13,29 +14,50 @@ import {
   type ProjectDetailsFormState,
 } from "./ProjectDetailsForm";
 
-import { ProjectTypeSelector } from "./ProjectTypeSelector";
+import {
+  ProjectTypeSelector,
+} from "./ProjectTypeSelector";
 
 export interface CreateProjectDialogInput {
   title: string;
-  projectType: ProjectType;
 
-  plannedSeasonCount: number | null;
-  plannedEpisodeCount: number | null;
+  authorName:
+    string | null;
 
-  durationMinutes: number;
-  minimumScenes: number | null;
-  maximumScenes: number | null;
+  projectType:
+    ProjectType;
+
+  seriesStructure:
+    SeriesStructure | null;
+
+  plannedSeasonCount:
+    number | null;
+
+  plannedEpisodeCount:
+    number | null;
+
+  durationMinutes:
+    number | null;
+
+  minimumScenes:
+    number | null;
+
+  maximumScenes:
+    number | null;
 }
 
 interface CreateProjectDialogProps {
   isOpen: boolean;
   isSubmitting: boolean;
-  error: string | null;
+
+  error:
+    string | null;
 
   onClose: () => void;
 
   onCreateProject: (
-    input: CreateProjectDialogInput,
+    input:
+      CreateProjectDialogInput,
   ) => Promise<Project | null>;
 }
 
@@ -43,14 +65,22 @@ type DialogStep =
   | "project-type"
   | "project-details";
 
-const initialFormState: ProjectDetailsFormState = {
-  title: "",
-  durationMinutes: "52",
-  plannedSeasonCount: "1",
-  plannedEpisodeCount: "30",
-  minimumScenes: "24",
-  maximumScenes: "26",
-};
+const initialFormState:
+  ProjectDetailsFormState = {
+    title: "",
+    authorName: "",
+
+    seriesStructure:
+      "single_season",
+
+    durationMinutes: "52",
+
+    plannedSeasonCount: "1",
+    plannedEpisodeCount: "30",
+
+    minimumScenes: "24",
+    maximumScenes: "26",
+  };
 
 export function CreateProjectDialog({
   isOpen,
@@ -60,10 +90,17 @@ export function CreateProjectDialog({
   onCreateProject,
 }: CreateProjectDialogProps) {
   const [step, setStep] =
-    useState<DialogStep>("project-type");
+    useState<DialogStep>(
+      "project-type",
+    );
 
-  const [selectedType, setSelectedType] =
-    useState<ProjectType | null>(null);
+  const [
+    selectedType,
+    setSelectedType,
+  ] =
+    useState<ProjectType | null>(
+      null,
+    );
 
   const [form, setForm] =
     useState<ProjectDetailsFormState>(
@@ -80,7 +117,9 @@ export function CreateProjectDialog({
     setSelectedType(projectType);
 
     setForm(
-      getInitialFormState(projectType),
+      getInitialFormState(
+        projectType,
+      ),
     );
   }
 
@@ -92,7 +131,8 @@ export function CreateProjectDialog({
     setStep("project-details");
   }
 
-  function goBackToTypeSelection(): void {
+  function goBackToTypeSelection():
+    void {
     if (isSubmitting) {
       return;
     }
@@ -101,7 +141,8 @@ export function CreateProjectDialog({
   }
 
   async function handleSubmit(
-    event: FormEvent<HTMLFormElement>,
+    event:
+      FormEvent<HTMLFormElement>,
   ): Promise<void> {
     event.preventDefault();
 
@@ -109,14 +150,29 @@ export function CreateProjectDialog({
       return;
     }
 
+    const seriesStructure =
+      getSeriesStructure(
+        selectedType,
+        form.seriesStructure,
+      );
+
     const createdProject =
       await onCreateProject({
         title: form.title.trim(),
-        projectType: selectedType,
+
+        authorName:
+          form.authorName.trim() ||
+          null,
+
+        projectType:
+          selectedType,
+
+        seriesStructure,
 
         plannedSeasonCount:
           getSeasonCount(
             selectedType,
+            seriesStructure,
             form.plannedSeasonCount,
           ),
 
@@ -127,7 +183,9 @@ export function CreateProjectDialog({
           ),
 
         durationMinutes:
-          Number(form.durationMinutes),
+          parseOptionalNumber(
+            form.durationMinutes,
+          ),
 
         minimumScenes:
           parseOptionalNumber(
@@ -140,7 +198,9 @@ export function CreateProjectDialog({
           ),
       });
 
-    if (createdProject !== null) {
+    if (
+      createdProject !== null
+    ) {
       resetDialog();
       onClose();
     }
@@ -157,8 +217,12 @@ export function CreateProjectDialog({
 
   function resetDialog(): void {
     setStep("project-type");
+
     setSelectedType(null);
-    setForm(initialFormState);
+
+    setForm(
+      initialFormState,
+    );
   }
 
   return (
@@ -167,7 +231,8 @@ export function CreateProjectDialog({
       role="presentation"
       onMouseDown={(event) => {
         if (
-          event.target === event.currentTarget
+          event.target ===
+          event.currentTarget
         ) {
           handleClose();
         }
@@ -191,9 +256,10 @@ export function CreateProjectDialog({
             </h2>
 
             <p>
-              {step === "project-type"
-                ? "ابدأ باختيار نوع العمل الذي تريد بناءه."
-                : "أدخل المعلومات الأساسية للعمل المختار."}
+              {step ===
+              "project-type"
+                ? "ابدأ باختيار نوع العمل، لأن لكل نوع بنيته ومحرره الخاص."
+                : "أدخل البيانات الأساسية التي يحتاجها المشروع قبل الانتقال إلى بناء الحكاية والشخصيات."}
             </p>
           </div>
 
@@ -211,7 +277,8 @@ export function CreateProjectDialog({
         <div className="project-dialog-progress">
           <span
             className={
-              step === "project-type"
+              step ===
+              "project-type"
                 ? "is-active"
                 : "is-completed"
             }
@@ -223,7 +290,8 @@ export function CreateProjectDialog({
 
           <span
             className={
-              step === "project-details"
+              step ===
+              "project-details"
                 ? "is-active"
                 : ""
             }
@@ -241,11 +309,16 @@ export function CreateProjectDialog({
           </div>
         )}
 
-        {step === "project-type" ? (
+        {step ===
+        "project-type" ? (
           <div className="project-dialog-step">
             <ProjectTypeSelector
-              selectedType={selectedType}
-              onSelect={handleTypeSelection}
+              selectedType={
+                selectedType
+              }
+              onSelect={
+                handleTypeSelection
+              }
             />
 
             <footer className="project-dialog-actions">
@@ -261,7 +334,8 @@ export function CreateProjectDialog({
                 type="button"
                 className="project-dialog-primary-button"
                 disabled={
-                  selectedType === null
+                  selectedType ===
+                  null
                 }
                 onClick={goToDetails}
               >
@@ -273,12 +347,17 @@ export function CreateProjectDialog({
           <form
             className="project-dialog-form"
             onSubmit={(event) => {
-              void handleSubmit(event);
+              void handleSubmit(
+                event,
+              );
             }}
           >
-            {selectedType !== null && (
+            {selectedType !==
+              null && (
               <ProjectDetailsForm
-                projectType={selectedType}
+                projectType={
+                  selectedType
+                }
                 form={form}
                 onChange={setForm}
               />
@@ -288,7 +367,9 @@ export function CreateProjectDialog({
               <button
                 type="button"
                 className="project-dialog-secondary-button"
-                disabled={isSubmitting}
+                disabled={
+                  isSubmitting
+                }
                 onClick={
                   goBackToTypeSelection
                 }
@@ -299,11 +380,13 @@ export function CreateProjectDialog({
               <button
                 type="submit"
                 className="project-dialog-primary-button"
-                disabled={isSubmitting}
+                disabled={
+                  isSubmitting
+                }
               >
                 {isSubmitting
                   ? "جارٍ إنشاء المشروع..."
-                  : "إنشاء المشروع"}
+                  : "إنشاء المشروع والبدء"}
               </button>
             </footer>
           </form>
@@ -320,9 +403,19 @@ function getInitialFormState(
     case "series":
       return {
         title: "",
+        authorName: "",
+
+        seriesStructure:
+          "single_season",
+
         durationMinutes: "52",
-        plannedSeasonCount: "1",
-        plannedEpisodeCount: "30",
+
+        plannedSeasonCount:
+          "1",
+
+        plannedEpisodeCount:
+          "30",
+
         minimumScenes: "24",
         maximumScenes: "26",
       };
@@ -330,9 +423,19 @@ function getInitialFormState(
     case "film":
       return {
         title: "",
+        authorName: "",
+
+        seriesStructure:
+          "single_season",
+
         durationMinutes: "100",
-        plannedSeasonCount: "",
-        plannedEpisodeCount: "",
+
+        plannedSeasonCount:
+          "",
+
+        plannedEpisodeCount:
+          "",
+
         minimumScenes: "40",
         maximumScenes: "60",
       };
@@ -340,9 +443,19 @@ function getInitialFormState(
     case "short_film":
       return {
         title: "",
+        authorName: "",
+
+        seriesStructure:
+          "single_season",
+
         durationMinutes: "20",
-        plannedSeasonCount: "",
-        plannedEpisodeCount: "",
+
+        plannedSeasonCount:
+          "",
+
+        plannedEpisodeCount:
+          "",
+
         minimumScenes: "8",
         maximumScenes: "18",
       };
@@ -350,9 +463,19 @@ function getInitialFormState(
     case "single_episode":
       return {
         title: "",
+        authorName: "",
+
+        seriesStructure:
+          "single_season",
+
         durationMinutes: "52",
-        plannedSeasonCount: "",
-        plannedEpisodeCount: "1",
+
+        plannedSeasonCount:
+          "",
+
+        plannedEpisodeCount:
+          "1",
+
         minimumScenes: "24",
         maximumScenes: "26",
       };
@@ -360,53 +483,100 @@ function getInitialFormState(
     case "stage_play":
       return {
         title: "",
+        authorName: "",
+
+        seriesStructure:
+          "single_season",
+
         durationMinutes: "90",
-        plannedSeasonCount: "",
-        plannedEpisodeCount: "",
+
+        plannedSeasonCount:
+          "",
+
+        plannedEpisodeCount:
+          "",
+
         minimumScenes: "",
         maximumScenes: "",
       };
   }
 }
 
+function getSeriesStructure(
+  projectType: ProjectType,
+
+  value: SeriesStructure,
+): SeriesStructure | null {
+  if (projectType !== "series") {
+    return null;
+  }
+
+  return value;
+}
+
 function getSeasonCount(
   projectType: ProjectType,
+
+  seriesStructure:
+    SeriesStructure | null,
+
   value: string,
 ): number | null {
   if (projectType !== "series") {
     return null;
   }
 
-  return Number(value);
+  if (
+    seriesStructure ===
+    "single_season"
+  ) {
+    return 1;
+  }
+
+  return parseOptionalNumber(
+    value,
+  );
 }
 
 function getEpisodeCount(
   projectType: ProjectType,
+
   value: string,
 ): number | null {
-  if (projectType === "series") {
-    return Number(value);
-  }
-
-  if (projectType === "single_episode") {
+  if (
+    projectType ===
+    "single_episode"
+  ) {
     return 1;
   }
 
-  return null;
+  if (
+    projectType !== "series"
+  ) {
+    return null;
+  }
+
+  return parseOptionalNumber(
+    value,
+  );
 }
 
 function parseOptionalNumber(
   value: string,
 ): number | null {
-  const normalizedValue = value.trim();
+  const normalizedValue =
+    value.trim();
 
   if (!normalizedValue) {
     return null;
   }
 
-  const parsedValue = Number(normalizedValue);
+  const parsedValue =
+    Number(normalizedValue);
 
-  return Number.isFinite(parsedValue)
+  return Number.isFinite(
+    parsedValue,
+  )
     ? parsedValue
     : null;
 }

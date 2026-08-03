@@ -1,29 +1,45 @@
-import type { Project } from "../types";
+import type {
+  Project,
+} from "../types";
 
-export const sampleSeriesProject: Project = {
-  id: "01900000-0000-7000-8000-000000000001",
+export const sampleSeriesProject:
+  Project = {
+    id:
+      "01900000-0000-7000-8000-000000000001",
 
-  title: "حد الخاوة",
-  subtitle: null,
+    title: "حد الخاوة",
+    subtitle: null,
 
-  projectType: "series",
-  status: "in_progress",
+    projectType: "series",
 
-  language: "ar",
-  textDirection: "rtl",
+    seriesStructure:
+      "single_season",
 
-  authorName: null,
-  description: null,
+    status: "in_progress",
 
-  plannedSeasonCount: 1,
-  plannedEpisodeCount: 30,
+    language: "ar",
+    textDirection: "rtl",
 
-  defaultEpisodeDurationMinutes: 52,
+    authorName: null,
+    description: null,
 
-  defaultMinimumScenesPerEpisode: 24,
-  defaultMaximumScenesPerEpisode: 26,
+    plannedSeasonCount: 1,
+    plannedEpisodeCount: 30,
 
-  createdAt: "2026-08-01T09:00:00.000Z",
-  updatedAt: "2026-08-01T09:00:00.000Z",
-  lastOpenedAt: null,
-};
+    defaultEpisodeDurationMinutes:
+      52,
+
+    defaultMinimumScenesPerEpisode:
+      24,
+
+    defaultMaximumScenesPerEpisode:
+      26,
+
+    createdAt:
+      "2026-08-01T09:00:00.000Z",
+
+    updatedAt:
+      "2026-08-01T09:00:00.000Z",
+
+    lastOpenedAt: null,
+  };

@@ -1,17 +1,29 @@
-import type { ProjectType } from "../../types";
+import type {
+  ProjectType,
+  SeriesStructure,
+} from "../../types";
 
 export interface ProjectDetailsFormState {
   title: string;
+  authorName: string;
+
+  seriesStructure:
+    SeriesStructure;
+
   durationMinutes: string;
+
   plannedSeasonCount: string;
   plannedEpisodeCount: string;
+
   minimumScenes: string;
   maximumScenes: string;
 }
 
 interface ProjectDetailsFormProps {
   projectType: ProjectType;
-  form: ProjectDetailsFormState;
+
+  form:
+    ProjectDetailsFormState;
 
   onChange: (
     form: ProjectDetailsFormState,
@@ -24,21 +36,43 @@ export function ProjectDetailsForm({
   onChange,
 }: ProjectDetailsFormProps) {
   const configuration =
-    getProjectTypeConfiguration(projectType);
+    getProjectTypeConfiguration(
+      projectType,
+    );
+
+  const isSeries =
+    projectType === "series";
+
+  const isMultiSeasonSeries =
+    isSeries &&
+    form.seriesStructure ===
+      "multi_season";
 
   return (
     <div className="project-details-step">
       <div className="project-details-heading">
-        <span>{configuration.kicker}</span>
+        <span>
+          {configuration.kicker}
+        </span>
 
-        <h3>{configuration.title}</h3>
+        <h3>
+          {configuration.title}
+        </h3>
 
-        <p>{configuration.description}</p>
+        <p>
+          {
+            configuration.description
+          }
+        </p>
       </div>
 
       <div className="project-details-fields">
         <label className="project-dialog-field project-dialog-field--full">
-          <span>{configuration.titleLabel}</span>
+          <span>
+            {
+              configuration.titleLabel
+            }
+          </span>
 
           <input
             type="text"
@@ -46,76 +80,203 @@ export function ProjectDetailsForm({
             required
             maxLength={180}
             placeholder={
-              configuration.titlePlaceholder
+              configuration
+                .titlePlaceholder
             }
             value={form.title}
             onChange={(event) => {
               onChange({
                 ...form,
-                title: event.target.value,
+
+                title:
+                  event.target.value,
               });
             }}
           />
         </label>
 
-        {projectType === "series" && (
-          <>
-            <label className="project-dialog-field">
-              <span>عدد المواسم</span>
+        <label className="project-dialog-field project-dialog-field--full">
+          <span>
+            اسم الكاتب
+          </span>
 
-              <input
-                type="number"
-                min="1"
-                required
-                value={form.plannedSeasonCount}
-                onChange={(event) => {
-                  onChange({
-                    ...form,
-                    plannedSeasonCount:
-                      event.target.value,
-                  });
-                }}
-              />
-            </label>
+          <input
+            type="text"
+            maxLength={180}
+            placeholder="اسم الكاتب أو الكاتبة"
+            value={form.authorName}
+            onChange={(event) => {
+              onChange({
+                ...form,
 
-            <label className="project-dialog-field">
-              <span>عدد الحلقات الإجمالي</span>
+                authorName:
+                  event.target.value,
+              });
+            }}
+          />
+        </label>
 
-              <input
-                type="number"
-                min="1"
-                required
-                value={form.plannedEpisodeCount}
-                onChange={(event) => {
-                  onChange({
-                    ...form,
-                    plannedEpisodeCount:
-                      event.target.value,
-                  });
-                }}
-              />
-            </label>
-          </>
+        {isSeries && (
+          <fieldset className="project-dialog-field project-dialog-field--full">
+            <legend>
+              بنية المسلسل
+            </legend>
+
+            <div className="project-series-structure-options">
+              <label className="project-series-structure-option">
+                <input
+                  type="radio"
+                  name="series-structure"
+                  value="single_season"
+                  checked={
+                    form.seriesStructure ===
+                    "single_season"
+                  }
+                  onChange={() => {
+                    onChange({
+                      ...form,
+
+                      seriesStructure:
+                        "single_season",
+
+                      plannedSeasonCount:
+                        "1",
+                    });
+                  }}
+                />
+
+                <span>
+                  <strong>
+                    مسلسل من موسم واحد
+                  </strong>
+
+                  <small>
+                    حلقات تنتمي إلى حكاية
+                    مكتملة من غير طبقة
+                    مواسم إضافية في
+                    الواجهة.
+                  </small>
+                </span>
+              </label>
+
+              <label className="project-series-structure-option">
+                <input
+                  type="radio"
+                  name="series-structure"
+                  value="multi_season"
+                  checked={
+                    form.seriesStructure ===
+                    "multi_season"
+                  }
+                  onChange={() => {
+                    onChange({
+                      ...form,
+
+                      seriesStructure:
+                        "multi_season",
+
+                      plannedSeasonCount:
+                        form
+                          .plannedSeasonCount ===
+                        "1"
+                          ? "2"
+                          : form
+                              .plannedSeasonCount,
+                    });
+                  }}
+                />
+
+                <span>
+                  <strong>
+                    مسلسل متعدد المواسم
+                  </strong>
+
+                  <small>
+                    يُنظم المشروع إلى
+                    مواسم، ويضم كل موسم
+                    حلقاته وقوسه الدرامي.
+                  </small>
+                </span>
+              </label>
+            </div>
+          </fieldset>
         )}
 
-        {projectType === "single_episode" && (
+        {isMultiSeasonSeries && (
+          <label className="project-dialog-field">
+            <span>
+              عدد المواسم المتوقع
+            </span>
+
+            <input
+              type="number"
+              min="2"
+              required
+              value={
+                form.plannedSeasonCount
+              }
+              onChange={(event) => {
+                onChange({
+                  ...form,
+
+                  plannedSeasonCount:
+                    event.target.value,
+                });
+              }}
+            />
+          </label>
+        )}
+
+        {isSeries && (
+          <label className="project-dialog-field">
+            <span>
+              عدد الحلقات المتوقع
+            </span>
+
+            <input
+              type="number"
+              min="1"
+              required
+              value={
+                form.plannedEpisodeCount
+              }
+              onChange={(event) => {
+                onChange({
+                  ...form,
+
+                  plannedEpisodeCount:
+                    event.target.value,
+                });
+              }}
+            />
+          </label>
+        )}
+
+        {projectType ===
+          "single_episode" && (
           <div className="project-dialog-information">
-            سيُنشأ هذا المشروع بوصفه حلقة واحدة
-            مستقلة.
+            سيُنشأ المشروع بوصفه
+            حلقة واحدة مستقلة.
           </div>
         )}
 
         <label className="project-dialog-field">
-          <span>{configuration.durationLabel}</span>
+          <span>
+            {
+              configuration.durationLabel
+            }
+          </span>
 
           <input
             type="number"
             min="1"
-            required
-            value={form.durationMinutes}
+            value={
+              form.durationMinutes
+            }
             onChange={(event) => {
               onChange({
                 ...form,
+
                 durationMinutes:
                   event.target.value,
               });
@@ -125,7 +286,10 @@ export function ProjectDetailsForm({
 
         <label className="project-dialog-field">
           <span>
-            {configuration.minimumScenesLabel}
+            {
+              configuration
+                .minimumScenesLabel
+            }
           </span>
 
           <input
@@ -135,6 +299,7 @@ export function ProjectDetailsForm({
             onChange={(event) => {
               onChange({
                 ...form,
+
                 minimumScenes:
                   event.target.value,
               });
@@ -144,7 +309,10 @@ export function ProjectDetailsForm({
 
         <label className="project-dialog-field">
           <span>
-            {configuration.maximumScenesLabel}
+            {
+              configuration
+                .maximumScenesLabel
+            }
           </span>
 
           <input
@@ -154,12 +322,21 @@ export function ProjectDetailsForm({
             onChange={(event) => {
               onChange({
                 ...form,
+
                 maximumScenes:
                   event.target.value,
               });
             }}
           />
         </label>
+
+        <div className="project-dialog-information project-dialog-field--full">
+          هذه التقديرات ليست إلزامية
+          أثناء الكتابة، ويمكن تعديلها
+          لاحقًا. لن يطلب منك التطبيق
+          إنشاء المشاهد واحدًا واحدًا
+          قبل التحرير.
+        </div>
       </div>
     </div>
   );
@@ -174,6 +351,7 @@ interface ProjectTypeConfiguration {
   titlePlaceholder: string;
 
   durationLabel: string;
+
   minimumScenesLabel: string;
   maximumScenesLabel: string;
 }
@@ -184,90 +362,137 @@ function getProjectTypeConfiguration(
   switch (projectType) {
     case "series":
       return {
-        kicker: "مسلسل تلفزيوني",
-        title: "حدد البنية العامة للمسلسل",
+        kicker:
+          "مسلسل تلفزيوني",
+
+        title:
+          "حدد البنية العامة للمسلسل",
+
         description:
-          "يمكن تعديل عدد المواسم والحلقات ومدة الحلقة لاحقًا.",
+          "اختر أولًا ما إذا كان المسلسل من موسم واحد أو متعدد المواسم، ثم حدد تقديراته العامة.",
 
-        titleLabel: "عنوان المسلسل",
-        titlePlaceholder: "مثال: حد الخاوة",
+        titleLabel:
+          "عنوان المسلسل",
 
-        durationLabel: "مدة الحلقة بالدقائق",
+        titlePlaceholder:
+          "مثال: حد الخاوة",
+
+        durationLabel:
+          "مدة الحلقة بالدقائق",
+
         minimumScenesLabel:
-          "الحد الأدنى لمشاهد الحلقة",
+          "الحد التقريبي الأدنى لمشاهد الحلقة",
+
         maximumScenesLabel:
-          "الحد الأقصى لمشاهد الحلقة",
+          "الحد التقريبي الأقصى لمشاهد الحلقة",
       };
 
     case "film":
       return {
-        kicker: "فيلم سينمائي",
-        title: "حدد البنية العامة للفيلم",
-        description:
-          "أدخل المدة المستهدفة وعدد المشاهد المتوقع للفيلم.",
+        kicker:
+          "فيلم سينمائي",
 
-        titleLabel: "عنوان الفيلم",
-        titlePlaceholder: "عنوان الفيلم السينمائي",
+        title:
+          "حدد الهوية العامة للفيلم",
+
+        description:
+          "أدخل عنوان الفيلم وتقديراته الأولية. يمكن تعديل هذه البيانات في أي وقت.",
+
+        titleLabel:
+          "عنوان الفيلم",
+
+        titlePlaceholder:
+          "عنوان الفيلم السينمائي",
 
         durationLabel:
           "المدة المستهدفة بالدقائق",
+
         minimumScenesLabel:
-          "الحد الأدنى للمشاهد",
+          "الحد التقريبي الأدنى للمشاهد",
+
         maximumScenesLabel:
-          "الحد الأقصى للمشاهد",
+          "الحد التقريبي الأقصى للمشاهد",
       };
 
     case "short_film":
       return {
-        kicker: "فيلم قصير",
-        title: "حدد البنية العامة للفيلم القصير",
-        description:
-          "يمكنك تحديد مدة تقريبية ونطاق متوقع لعدد المشاهد.",
+        kicker:
+          "فيلم قصير",
 
-        titleLabel: "عنوان الفيلم القصير",
-        titlePlaceholder: "عنوان الفيلم القصير",
+        title:
+          "حدد الهوية العامة للفيلم القصير",
+
+        description:
+          "حدد مدة تقريبية ونطاقًا متوقعًا للمشاهد، من غير أن تصبح هذه التقديرات قيودًا على التحرير.",
+
+        titleLabel:
+          "عنوان الفيلم القصير",
+
+        titlePlaceholder:
+          "عنوان الفيلم القصير",
 
         durationLabel:
           "المدة المستهدفة بالدقائق",
+
         minimumScenesLabel:
-          "الحد الأدنى للمشاهد",
+          "الحد التقريبي الأدنى للمشاهد",
+
         maximumScenesLabel:
-          "الحد الأقصى للمشاهد",
+          "الحد التقريبي الأقصى للمشاهد",
       };
 
     case "single_episode":
       return {
-        kicker: "حلقة منفردة",
-        title: "حدد بنية الحلقة",
+        kicker:
+          "حلقة منفردة",
+
+        title:
+          "حدد الهوية العامة للحلقة",
+
         description:
           "سيُنشأ المشروع بوصفه حلقة واحدة مكتملة ومستقلة.",
 
-        titleLabel: "عنوان الحلقة",
-        titlePlaceholder: "عنوان الحلقة المنفردة",
+        titleLabel:
+          "عنوان الحلقة",
 
-        durationLabel: "مدة الحلقة بالدقائق",
+        titlePlaceholder:
+          "عنوان الحلقة المنفردة",
+
+        durationLabel:
+          "مدة الحلقة بالدقائق",
+
         minimumScenesLabel:
-          "الحد الأدنى للمشاهد",
+          "الحد التقريبي الأدنى للمشاهد",
+
         maximumScenesLabel:
-          "الحد الأقصى للمشاهد",
+          "الحد التقريبي الأقصى للمشاهد",
       };
 
     case "stage_play":
       return {
-        kicker: "مسرحية",
-        title: "حدد البنية الأولية للمسرحية",
-        description:
-          "أدخل مدة العرض والنطاق المتوقع لعدد المشاهد أو اللوحات.",
+        kicker:
+          "مسرحية",
 
-        titleLabel: "عنوان المسرحية",
-        titlePlaceholder: "عنوان المسرحية",
+        title:
+          "حدد الهوية العامة للمسرحية",
+
+        description:
+          "ستُبنى المسرحية لاحقًا داخل محرر خاص بالفصول واللوحات والحوار والإرشادات المسرحية.",
+
+        titleLabel:
+          "عنوان المسرحية",
+
+        titlePlaceholder:
+          "عنوان المسرحية",
 
         durationLabel:
           "مدة العرض المتوقعة بالدقائق",
+
         minimumScenesLabel:
-          "الحد الأدنى للمشاهد أو اللوحات",
+          "الحد التقريبي الأدنى للمشاهد أو اللوحات",
+
         maximumScenesLabel:
-          "الحد الأقصى للمشاهد أو اللوحات",
+          "الحد التقريبي الأقصى للمشاهد أو اللوحات",
       };
   }
 }

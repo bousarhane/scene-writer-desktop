@@ -53,3 +53,19 @@ export type {
 export {
   SqliteEpisodeRepository,
 } from "./SqliteEpisodeRepository";
+
+export type {
+  SceneRepository,
+} from "./SceneRepository";
+
+export {
+  SqliteSceneRepository,
+} from "./SqliteSceneRepository";
+
+export type {
+  SceneElementRepository,
+} from "./SceneElementRepository";
+
+export {
+  SqliteSceneElementRepository,
+} from "./SqliteSceneElementRepository";

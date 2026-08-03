@@ -1,0 +1,1693 @@
+﻿import {
+  useEffect,
+  useMemo,
+  useState,
+  type FormEvent,
+} from "react";
+
+import type {
+  Episode,
+  EpisodeStatus,
+  Project,
+  Season,
+} from "../../types";
+
+import type {
+  UpdateEpisodeInput,
+  UpdateSeasonInput,
+} from "../../application";
+
+import {
+  useProjectStructure,
+} from "./useProjectStructure";
+
+import "./structure-workspace.css";
+
+interface ProjectStructureWorkspaceProps {
+  project: Project;
+}
+
+type EditorMode =
+  | "season"
+  | "episode";
+
+interface SeasonFormState {
+  number: string;
+  title: string;
+  description: string;
+
+  plannedEpisodeCount: string;
+  defaultEpisodeDurationMinutes:
+    string;
+}
+
+interface EpisodeFormState {
+  seasonId: string;
+
+  number: string;
+  title: string;
+
+  synopsis: string;
+  notes: string;
+
+  targetDurationMinutes: string;
+  estimatedDurationSeconds: string;
+
+  status: EpisodeStatus;
+}
+
+const emptySeasonForm:
+  SeasonFormState = {
+    number: "",
+    title: "",
+    description: "",
+
+    plannedEpisodeCount: "",
+    defaultEpisodeDurationMinutes: "",
+  };
+
+const emptyEpisodeForm:
+  EpisodeFormState = {
+    seasonId: "",
+
+    number: "",
+    title: "",
+
+    synopsis: "",
+    notes: "",
+
+    targetDurationMinutes: "",
+    estimatedDurationSeconds: "",
+
+    status: "outline",
+  };
+
+export function ProjectStructureWorkspace({
+  project,
+}: ProjectStructureWorkspaceProps) {
+  const {
+    seasons,
+    episodes,
+
+    isLoading,
+    isSaving,
+    error,
+
+    createSeason,
+    updateSeason,
+    deleteSeason,
+
+    createEpisode,
+    updateEpisode,
+    deleteEpisode,
+
+    clearError,
+  } = useProjectStructure(project.id);
+
+  const [
+    selectedSeasonId,
+    setSelectedSeasonId,
+  ] = useState<string | null>(
+    null,
+  );
+
+  const [
+    selectedEpisodeId,
+    setSelectedEpisodeId,
+  ] = useState<string | null>(
+    null,
+  );
+
+  const [
+    editorMode,
+    setEditorMode,
+  ] = useState<EditorMode>(
+    "season",
+  );
+
+  const [
+    seasonForm,
+    setSeasonForm,
+  ] = useState<SeasonFormState>({
+    ...emptySeasonForm,
+  });
+
+  const [
+    savedSeasonForm,
+    setSavedSeasonForm,
+  ] = useState<SeasonFormState>({
+    ...emptySeasonForm,
+  });
+
+  const [
+    episodeForm,
+    setEpisodeForm,
+  ] = useState<EpisodeFormState>({
+    ...emptyEpisodeForm,
+  });
+
+  const [
+    savedEpisodeForm,
+    setSavedEpisodeForm,
+  ] = useState<EpisodeFormState>({
+    ...emptyEpisodeForm,
+  });
+
+  const selectedSeason =
+    seasons.find(
+      (season) =>
+        season.id ===
+        selectedSeasonId,
+    ) ?? null;
+
+  const selectedEpisode =
+    episodes.find(
+      (episode) =>
+        episode.id ===
+        selectedEpisodeId,
+    ) ?? null;
+
+  const displayedEpisodes =
+    useMemo(() => {
+      if (
+        project.projectType ===
+        "single_episode"
+      ) {
+        return episodes.filter(
+          (episode) =>
+            episode.seasonId === null,
+        );
+      }
+
+      if (
+        selectedSeasonId === null
+      ) {
+        return [];
+      }
+
+      return episodes.filter(
+        (episode) =>
+          episode.seasonId ===
+          selectedSeasonId,
+      );
+    }, [
+      episodes,
+      project.projectType,
+      selectedSeasonId,
+    ]);
+
+  const isSeasonDirty =
+    JSON.stringify(seasonForm) !==
+    JSON.stringify(savedSeasonForm);
+
+  const isEpisodeDirty =
+    JSON.stringify(episodeForm) !==
+    JSON.stringify(savedEpisodeForm);
+
+  const isDirty =
+    editorMode === "season"
+      ? isSeasonDirty
+      : isEpisodeDirty;
+
+  useEffect(() => {
+    if (
+      seasons.length > 0 &&
+      selectedSeasonId === null &&
+      project.projectType === "series"
+    ) {
+      setSelectedSeasonId(
+        seasons[0].id,
+      );
+    }
+  }, [
+    project.projectType,
+    seasons,
+    selectedSeasonId,
+  ]);
+
+  useEffect(() => {
+    if (selectedSeason === null) {
+      return;
+    }
+
+    const nextForm =
+      seasonToForm(
+        selectedSeason,
+      );
+
+    setSeasonForm(nextForm);
+    setSavedSeasonForm(nextForm);
+  }, [selectedSeason]);
+
+  useEffect(() => {
+    if (selectedEpisode === null) {
+      return;
+    }
+
+    const nextForm =
+      episodeToForm(
+        selectedEpisode,
+      );
+
+    setEpisodeForm(nextForm);
+    setSavedEpisodeForm(nextForm);
+  }, [selectedEpisode]);
+
+  useEffect(() => {
+    function handleKeyDown(
+      event: KeyboardEvent,
+    ): void {
+      const isSaveShortcut =
+        (event.ctrlKey ||
+          event.metaKey) &&
+        event.key.toLocaleLowerCase() ===
+          "s";
+
+      if (
+        !isSaveShortcut ||
+        !isDirty ||
+        isSaving
+      ) {
+        return;
+      }
+
+      event.preventDefault();
+
+      if (editorMode === "season") {
+        void saveSeason();
+      } else {
+        void saveEpisode();
+      }
+    }
+
+    window.addEventListener(
+      "keydown",
+      handleKeyDown,
+    );
+
+    return () => {
+      window.removeEventListener(
+        "keydown",
+        handleKeyDown,
+      );
+    };
+  }, [
+    editorMode,
+    isDirty,
+    isSaving,
+    seasonForm,
+    episodeForm,
+    selectedSeason,
+    selectedEpisode,
+  ]);
+
+  useEffect(() => {
+    function handleBeforeUnload(
+      event: BeforeUnloadEvent,
+    ): void {
+      if (!isDirty) {
+        return;
+      }
+
+      event.preventDefault();
+      event.returnValue = "";
+    }
+
+    window.addEventListener(
+      "beforeunload",
+      handleBeforeUnload,
+    );
+
+    return () => {
+      window.removeEventListener(
+        "beforeunload",
+        handleBeforeUnload,
+      );
+    };
+  }, [isDirty]);
+
+  function confirmDiscardChanges():
+    boolean {
+    if (!isDirty) {
+      return true;
+    }
+
+    return window.confirm(
+      "ØªÙˆØ¬Ø¯ ØªØºÙŠÙŠØ±Ø§Øª ØºÙŠØ± Ù…Ø­ÙÙˆØ¸Ø©.\n\nÙ‡Ù„ ØªØ±ÙŠØ¯ ØªØ¬Ø§Ù‡Ù„Ù‡Ø§ ÙˆØ§Ù„Ù…ØªØ§Ø¨Ø¹Ø©ØŸ",
+    );
+  }
+
+  function startNewSeason(): void {
+    if (!confirmDiscardChanges()) {
+      return;
+    }
+
+    clearError();
+
+    setEditorMode("season");
+    setSelectedSeasonId(null);
+    setSelectedEpisodeId(null);
+
+    const nextForm: SeasonFormState = {
+      ...emptySeasonForm,
+
+      number: String(
+        getNextSeasonNumber(
+          seasons,
+        ),
+      ),
+
+      defaultEpisodeDurationMinutes:
+        project
+          .defaultEpisodeDurationMinutes ===
+        null
+          ? ""
+          : String(
+              project
+                .defaultEpisodeDurationMinutes,
+            ),
+    };
+
+    setSeasonForm(nextForm);
+    setSavedSeasonForm({
+      ...emptySeasonForm,
+    });
+  }
+
+  function selectSeason(
+    season: Season,
+  ): void {
+    if (!confirmDiscardChanges()) {
+      return;
+    }
+
+    clearError();
+
+    setEditorMode("season");
+    setSelectedSeasonId(
+      season.id,
+    );
+    setSelectedEpisodeId(null);
+
+    const nextForm =
+      seasonToForm(season);
+
+    setSeasonForm(nextForm);
+    setSavedSeasonForm(nextForm);
+  }
+
+  function startNewEpisode(): void {
+    if (!confirmDiscardChanges()) {
+      return;
+    }
+
+    clearError();
+
+    const seasonId =
+      project.projectType === "series"
+        ? selectedSeasonId ?? ""
+        : "";
+
+    const duration =
+      selectedSeason
+        ?.defaultEpisodeDurationMinutes ??
+      project
+        .defaultEpisodeDurationMinutes ??
+      52;
+
+    const nextForm:
+      EpisodeFormState = {
+        ...emptyEpisodeForm,
+
+        seasonId,
+
+        number: String(
+          getNextEpisodeNumber(
+            episodes,
+            seasonId || null,
+          ),
+        ),
+
+        targetDurationMinutes:
+          String(duration),
+      };
+
+    setEditorMode("episode");
+    setSelectedEpisodeId(null);
+
+    setEpisodeForm(nextForm);
+    setSavedEpisodeForm({
+      ...emptyEpisodeForm,
+    });
+  }
+
+  function selectEpisode(
+    episode: Episode,
+  ): void {
+    if (!confirmDiscardChanges()) {
+      return;
+    }
+
+    clearError();
+
+    setEditorMode("episode");
+    setSelectedEpisodeId(
+      episode.id,
+    );
+
+    if (episode.seasonId !== null) {
+      setSelectedSeasonId(
+        episode.seasonId,
+      );
+    }
+
+    const nextForm =
+      episodeToForm(episode);
+
+    setEpisodeForm(nextForm);
+    setSavedEpisodeForm(nextForm);
+  }
+
+  async function saveSeason():
+    Promise<void> {
+    const number =
+      parsePositiveInteger(
+        seasonForm.number,
+      );
+
+    if (
+      number === null ||
+      isSaving
+    ) {
+      return;
+    }
+
+    const plannedEpisodeCount =
+      parseOptionalPositiveInteger(
+        seasonForm
+          .plannedEpisodeCount,
+      );
+
+    const defaultDuration =
+      parseOptionalPositiveInteger(
+        seasonForm
+          .defaultEpisodeDurationMinutes,
+      );
+
+    if (selectedSeason === null) {
+      const createdSeason =
+        await createSeason({
+          number,
+
+          title:
+            seasonForm.title,
+
+          description:
+            seasonForm.description,
+
+          plannedEpisodeCount,
+
+          defaultEpisodeDurationMinutes:
+            defaultDuration,
+        });
+
+      if (createdSeason !== null) {
+        setSelectedSeasonId(
+          createdSeason.id,
+        );
+
+        const nextForm =
+          seasonToForm(
+            createdSeason,
+          );
+
+        setSeasonForm(nextForm);
+        setSavedSeasonForm(nextForm);
+      }
+
+      return;
+    }
+
+    const input:
+      UpdateSeasonInput = {
+        number,
+
+        title:
+          seasonForm.title ||
+          null,
+
+        description:
+          seasonForm.description ||
+          null,
+
+        plannedEpisodeCount,
+
+        defaultEpisodeDurationMinutes:
+          defaultDuration,
+
+        orderIndex:
+          selectedSeason.orderIndex,
+      };
+
+    const updatedSeason =
+      await updateSeason(
+        selectedSeason.id,
+        input,
+      );
+
+    if (updatedSeason !== null) {
+      const nextForm =
+        seasonToForm(
+          updatedSeason,
+        );
+
+      setSeasonForm(nextForm);
+      setSavedSeasonForm(nextForm);
+    }
+  }
+
+  async function saveEpisode():
+    Promise<void> {
+    const number =
+      parsePositiveInteger(
+        episodeForm.number,
+      );
+
+    const duration =
+      parsePositiveInteger(
+        episodeForm
+          .targetDurationMinutes,
+      );
+
+    if (
+      number === null ||
+      duration === null ||
+      isSaving
+    ) {
+      return;
+    }
+
+    const seasonId =
+      project.projectType === "series"
+        ? episodeForm.seasonId ||
+          null
+        : null;
+
+    const estimatedDurationSeconds =
+      parseOptionalNonNegativeInteger(
+        episodeForm
+          .estimatedDurationSeconds,
+      );
+
+    if (selectedEpisode === null) {
+      const createdEpisode =
+        await createEpisode({
+          seasonId,
+
+          number,
+
+          title:
+            episodeForm.title,
+
+          synopsis:
+            episodeForm.synopsis,
+
+          notes:
+            episodeForm.notes,
+
+          targetDurationMinutes:
+            duration,
+
+          status:
+            episodeForm.status,
+        });
+
+      if (createdEpisode !== null) {
+        setSelectedEpisodeId(
+          createdEpisode.id,
+        );
+
+        const nextForm =
+          episodeToForm(
+            createdEpisode,
+          );
+
+        setEpisodeForm(nextForm);
+        setSavedEpisodeForm(nextForm);
+      }
+
+      return;
+    }
+
+    const input:
+      UpdateEpisodeInput = {
+        seasonId,
+
+        number,
+
+        title:
+          episodeForm.title ||
+          null,
+
+        synopsis:
+          episodeForm.synopsis ||
+          null,
+
+        notes:
+          episodeForm.notes ||
+          null,
+
+        targetDurationMinutes:
+          duration,
+
+        estimatedDurationSeconds,
+
+        status:
+          episodeForm.status,
+
+        orderIndex:
+          selectedEpisode.orderIndex,
+      };
+
+    const updatedEpisode =
+      await updateEpisode(
+        selectedEpisode.id,
+        input,
+      );
+
+    if (updatedEpisode !== null) {
+      const nextForm =
+        episodeToForm(
+          updatedEpisode,
+        );
+
+      setEpisodeForm(nextForm);
+      setSavedEpisodeForm(nextForm);
+    }
+  }
+
+  async function handleSeasonDelete():
+    Promise<void> {
+    if (selectedSeason === null) {
+      return;
+    }
+
+    const seasonEpisodes =
+      episodes.filter(
+        (episode) =>
+          episode.seasonId ===
+          selectedSeason.id,
+      );
+
+    const warning =
+      seasonEpisodes.length > 0
+        ? `\n\nØ³ÙŠÙØ­Ø°Ù Ù…Ø¹Ù‡ ${seasonEpisodes.length} Ù…Ù† Ø§Ù„Ø­Ù„Ù‚Ø§Øª.`
+        : "";
+
+    const confirmed =
+      window.confirm(
+        `Ù‡Ù„ ØªØ±ÙŠØ¯ Ø­Ø°Ù Ø§Ù„Ù…ÙˆØ³Ù… ${selectedSeason.number}ØŸ${warning}\n\nÙ„Ù† ÙŠÙ…ÙƒÙ† Ø§Ù„ØªØ±Ø§Ø¬Ø¹ Ø¹Ù† Ù‡Ø°Ø§ Ø§Ù„Ø¥Ø¬Ø±Ø§Ø¡.`,
+      );
+
+    if (!confirmed) {
+      return;
+    }
+
+    const deleted =
+      await deleteSeason(
+        selectedSeason.id,
+      );
+
+    if (deleted) {
+      setSelectedSeasonId(null);
+      setSelectedEpisodeId(null);
+
+      setSeasonForm({
+        ...emptySeasonForm,
+      });
+
+      setSavedSeasonForm({
+        ...emptySeasonForm,
+      });
+    }
+  }
+
+  async function handleEpisodeDelete():
+    Promise<void> {
+    if (selectedEpisode === null) {
+      return;
+    }
+
+    const confirmed =
+      window.confirm(
+        `Ù‡Ù„ ØªØ±ÙŠØ¯ Ø­Ø°Ù Ø§Ù„Ø­Ù„Ù‚Ø© ${selectedEpisode.number}ØŸ\n\nÙ„Ù† ÙŠÙ…ÙƒÙ† Ø§Ù„ØªØ±Ø§Ø¬Ø¹ Ø¹Ù† Ù‡Ø°Ø§ Ø§Ù„Ø¥Ø¬Ø±Ø§Ø¡.`,
+      );
+
+    if (!confirmed) {
+      return;
+    }
+
+    const deleted =
+      await deleteEpisode(
+        selectedEpisode.id,
+      );
+
+    if (deleted) {
+      setSelectedEpisodeId(null);
+
+      setEpisodeForm({
+        ...emptyEpisodeForm,
+      });
+
+      setSavedEpisodeForm({
+        ...emptyEpisodeForm,
+      });
+    }
+  }
+
+  if (
+    project.projectType !== "series" &&
+    project.projectType !==
+      "single_episode"
+  ) {
+    return (
+      <main
+        className="structure-workspace"
+        dir="rtl"
+      >
+        <header className="structure-header">
+          <div>
+            <span className="structure-kicker">
+              {project.title}
+            </span>
+
+            <h1>Ø¨Ù†ÙŠØ© Ø§Ù„Ø¹Ù…Ù„</h1>
+
+            <p>
+              Ø³ØªÙØ¨Ù†Ù‰ Ø¨Ù†ÙŠØ© Ù‡Ø°Ø§ Ø§Ù„Ù†ÙˆØ¹ Ù…Ù†
+              Ø§Ù„Ù…Ø´Ø§Ø±ÙŠØ¹ Ø¹Ù†Ø¯ ØªØ·ÙˆÙŠØ± Ø§Ù„ÙØµÙˆÙ„
+              ÙˆØ§Ù„ÙˆØ­Ø¯Ø§Øª Ø§Ù„Ø¯Ø±Ø§Ù…ÙŠØ©.
+            </p>
+          </div>
+        </header>
+
+        <section className="structure-unavailable">
+          ÙˆØ­Ø¯Ø© Ø§Ù„Ù…ÙˆØ§Ø³Ù… ÙˆØ§Ù„Ø­Ù„Ù‚Ø§Øª Ù…Ø®ØµØµØ©
+          Ø­Ø§Ù„ÙŠÙ‹Ø§ Ù„Ù„Ù…Ø³Ù„Ø³Ù„ ÙˆØ§Ù„Ø­Ù„Ù‚Ø©
+          Ø§Ù„Ù…Ù†ÙØ±Ø¯Ø©.
+        </section>
+      </main>
+    );
+  }
+
+  return (
+    <main
+      className="structure-workspace"
+      dir="rtl"
+    >
+      <header className="structure-header">
+        <div>
+          <span className="structure-kicker">
+            {project.title}
+          </span>
+
+          <h1>
+            {project.projectType ===
+            "series"
+              ? "Ø§Ù„Ù…ÙˆØ§Ø³Ù… ÙˆØ§Ù„Ø­Ù„Ù‚Ø§Øª"
+              : "Ø¨Ù†ÙŠØ© Ø§Ù„Ø­Ù„Ù‚Ø©"}
+          </h1>
+
+          <p>
+            ØªÙ†Ø¸ÙŠÙ… Ø§Ù„Ø¨Ù†ÙŠØ© Ø§Ù„Ø¹Ø§Ù…Ø© ÙˆÙƒØªØ§Ø¨Ø©
+            Ù…Ù„Ø®ØµØ§Øª Ø§Ù„Ø­Ù„Ù‚Ø§Øª ÙˆÙ…ØªØ§Ø¨Ø¹Ø©
+            Ø­Ø§Ù„ØªÙ‡Ø§.
+          </p>
+        </div>
+
+        <div className="structure-header-actions">
+          {project.projectType ===
+            "series" && (
+            <button
+              type="button"
+              className="structure-secondary-button"
+              onClick={startNewSeason}
+            >
+              Ù…ÙˆØ³Ù… Ø¬Ø¯ÙŠØ¯
+            </button>
+          )}
+
+          <button
+            type="button"
+            className="structure-primary-button"
+            disabled={
+              project.projectType ===
+                "series" &&
+              seasons.length === 0
+            }
+            onClick={startNewEpisode}
+          >
+            Ø­Ù„Ù‚Ø© Ø¬Ø¯ÙŠØ¯Ø©
+          </button>
+        </div>
+      </header>
+
+      {error !== null && (
+        <div
+          className="structure-error"
+          role="alert"
+        >
+          {error}
+        </div>
+      )}
+
+      <div className="structure-layout">
+        {project.projectType ===
+          "series" && (
+          <aside className="structure-seasons-panel">
+            <div className="structure-panel-heading">
+              <strong>Ø§Ù„Ù…ÙˆØ§Ø³Ù…</strong>
+              <span>{seasons.length}</span>
+            </div>
+
+            {isLoading ? (
+              <div className="structure-empty">
+                Ø¬Ø§Ø±Ù ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ù…ÙˆØ§Ø³Ù…...
+              </div>
+            ) : seasons.length === 0 ? (
+              <div className="structure-empty">
+                Ù„Ù… ÙŠÙÙ†Ø´Ø£ Ø£ÙŠ Ù…ÙˆØ³Ù… Ø¨Ø¹Ø¯.
+              </div>
+            ) : (
+              <div className="structure-season-list">
+                {seasons.map(
+                  (season) => {
+                    const episodeCount =
+                      episodes.filter(
+                        (episode) =>
+                          episode.seasonId ===
+                          season.id,
+                      ).length;
+
+                    return (
+                      <button
+                        key={season.id}
+                        type="button"
+                        className={
+                          season.id ===
+                          selectedSeasonId
+                            ? "structure-season-item is-active"
+                            : "structure-season-item"
+                        }
+                        onClick={() => {
+                          selectSeason(
+                            season,
+                          );
+                        }}
+                      >
+                        <strong>
+                          Ø§Ù„Ù…ÙˆØ³Ù…{" "}
+                          {season.number}
+                        </strong>
+
+                        <span>
+                          {season.title ??
+                            "Ø¯ÙˆÙ† Ø¹Ù†ÙˆØ§Ù†"}
+                        </span>
+
+                        <small>
+                          {episodeCount} Ø­Ù„Ù‚Ø©
+                        </small>
+                      </button>
+                    );
+                  },
+                )}
+              </div>
+            )}
+          </aside>
+        )}
+
+        <section className="structure-episodes-panel">
+          <div className="structure-panel-heading">
+            <strong>Ø§Ù„Ø­Ù„Ù‚Ø§Øª</strong>
+
+            <span>
+              {displayedEpisodes.length}
+            </span>
+          </div>
+
+          {isLoading ? (
+            <div className="structure-empty">
+              Ø¬Ø§Ø±Ù ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ø­Ù„Ù‚Ø§Øª...
+            </div>
+          ) : displayedEpisodes.length ===
+            0 ? (
+            <div className="structure-empty">
+              Ù„Ø§ ØªÙˆØ¬Ø¯ Ø­Ù„Ù‚Ø§Øª ÙÙŠ Ù‡Ø°Ø§
+              Ø§Ù„Ù‚Ø³Ù….
+            </div>
+          ) : (
+            <div className="structure-episode-list">
+              {displayedEpisodes.map(
+                (episode) => (
+                  <button
+                    key={episode.id}
+                    type="button"
+                    className={
+                      episode.id ===
+                      selectedEpisodeId
+                        ? "structure-episode-item is-active"
+                        : "structure-episode-item"
+                    }
+                    onClick={() => {
+                      selectEpisode(
+                        episode,
+                      );
+                    }}
+                  >
+                    <span className="structure-episode-number">
+                      {episode.number}
+                    </span>
+
+                    <span className="structure-episode-copy">
+                      <strong>
+                        {episode.title ??
+                          `Ø§Ù„Ø­Ù„Ù‚Ø© ${episode.number}`}
+                      </strong>
+
+                      <small>
+                        {getEpisodeStatusLabel(
+                          episode.status,
+                        )}
+                        {" Â· "}
+                        {
+                          episode.targetDurationMinutes
+                        }{" "}
+                        Ø¯Ù‚ÙŠÙ‚Ø©
+                      </small>
+                    </span>
+                  </button>
+                ),
+              )}
+            </div>
+          )}
+        </section>
+
+        <section className="structure-editor-panel">
+          <div className="structure-editor-heading">
+            <div>
+              <span>
+                {editorMode === "season"
+                  ? "Ø¨ÙŠØ§Ù†Ø§Øª Ø§Ù„Ù…ÙˆØ³Ù…"
+                  : "Ø¨ÙŠØ§Ù†Ø§Øª Ø§Ù„Ø­Ù„Ù‚Ø©"}
+              </span>
+
+              <h2>
+                {editorMode === "season"
+                  ? selectedSeason?.title ??
+                    "Ù…ÙˆØ³Ù… Ø¬Ø¯ÙŠØ¯"
+                  : selectedEpisode?.title ??
+                    "Ø­Ù„Ù‚Ø© Ø¬Ø¯ÙŠØ¯Ø©"}
+              </h2>
+            </div>
+
+            <div className="structure-editor-actions">
+              <span
+                className={
+                  isDirty
+                    ? "structure-save-status is-dirty"
+                    : "structure-save-status"
+                }
+              >
+                {isSaving
+                  ? "Ø¬Ø§Ø±Ù Ø§Ù„Ø­ÙØ¸..."
+                  : isDirty
+                    ? "ØªØºÙŠÙŠØ±Ø§Øª ØºÙŠØ± Ù…Ø­ÙÙˆØ¸Ø©"
+                    : "Ø¬Ù…ÙŠØ¹ Ø§Ù„ØªØºÙŠÙŠØ±Ø§Øª Ù…Ø­ÙÙˆØ¸Ø©"}
+              </span>
+
+              {editorMode === "season" &&
+                selectedSeason !== null && (
+                  <button
+                    type="button"
+                    className="structure-danger-button"
+                    disabled={isSaving}
+                    onClick={() => {
+                      void handleSeasonDelete();
+                    }}
+                  >
+                    Ø­Ø°Ù Ø§Ù„Ù…ÙˆØ³Ù…
+                  </button>
+                )}
+
+              {editorMode === "episode" &&
+                selectedEpisode !== null && (
+                  <button
+                    type="button"
+                    className="structure-danger-button"
+                    disabled={isSaving}
+                    onClick={() => {
+                      void handleEpisodeDelete();
+                    }}
+                  >
+                    Ø­Ø°Ù Ø§Ù„Ø­Ù„Ù‚Ø©
+                  </button>
+                )}
+            </div>
+          </div>
+
+          {editorMode === "season" ? (
+            <SeasonEditor
+              form={seasonForm}
+              isSaving={isSaving}
+              isDirty={isSeasonDirty}
+              onChange={(changes) => {
+                clearError();
+
+                setSeasonForm(
+                  (currentForm) => ({
+                    ...currentForm,
+                    ...changes,
+                  }),
+                );
+              }}
+              onReset={() => {
+                setSeasonForm({
+                  ...savedSeasonForm,
+                });
+              }}
+              onSubmit={() => {
+                void saveSeason();
+              }}
+            />
+          ) : (
+            <EpisodeEditor
+              project={project}
+              seasons={seasons}
+              form={episodeForm}
+              isSaving={isSaving}
+              isDirty={isEpisodeDirty}
+              onChange={(changes) => {
+                clearError();
+
+                setEpisodeForm(
+                  (currentForm) => ({
+                    ...currentForm,
+                    ...changes,
+                  }),
+                );
+              }}
+              onReset={() => {
+                setEpisodeForm({
+                  ...savedEpisodeForm,
+                });
+              }}
+              onSubmit={() => {
+                void saveEpisode();
+              }}
+            />
+          )}
+        </section>
+      </div>
+    </main>
+  );
+}
+
+interface SeasonEditorProps {
+  form: SeasonFormState;
+
+  isSaving: boolean;
+  isDirty: boolean;
+
+  onChange: (
+    changes:
+      Partial<SeasonFormState>,
+  ) => void;
+
+  onReset: () => void;
+  onSubmit: () => void;
+}
+
+function SeasonEditor({
+  form,
+  isSaving,
+  isDirty,
+  onChange,
+  onReset,
+  onSubmit,
+}: SeasonEditorProps) {
+  function handleSubmit(
+    event: FormEvent<HTMLFormElement>,
+  ): void {
+    event.preventDefault();
+    onSubmit();
+  }
+
+  return (
+    <form
+      className="structure-form"
+      onSubmit={handleSubmit}
+    >
+      <label>
+        <span>Ø±Ù‚Ù… Ø§Ù„Ù…ÙˆØ³Ù…</span>
+
+        <input
+          type="number"
+          min={1}
+          required
+          value={form.number}
+          onChange={(event) => {
+            onChange({
+              number:
+                event.target.value,
+            });
+          }}
+        />
+      </label>
+
+      <label>
+        <span>Ø¹Ù†ÙˆØ§Ù† Ø§Ù„Ù…ÙˆØ³Ù…</span>
+
+        <input
+          type="text"
+          value={form.title}
+          placeholder="Ø¹Ù†ÙˆØ§Ù† Ø§Ø®ØªÙŠØ§Ø±ÙŠ"
+          onChange={(event) => {
+            onChange({
+              title:
+                event.target.value,
+            });
+          }}
+        />
+      </label>
+
+      <label>
+        <span>
+          Ø¹Ø¯Ø¯ Ø§Ù„Ø­Ù„Ù‚Ø§Øª Ø§Ù„Ù…Ø®Ø·Ø·
+        </span>
+
+        <input
+          type="number"
+          min={1}
+          value={
+            form.plannedEpisodeCount
+          }
+          placeholder="Ø§Ø®ØªÙŠØ§Ø±ÙŠ"
+          onChange={(event) => {
+            onChange({
+              plannedEpisodeCount:
+                event.target.value,
+            });
+          }}
+        />
+      </label>
+
+      <label>
+        <span>
+          Ù…Ø¯Ø© Ø§Ù„Ø­Ù„Ù‚Ø© Ø§Ù„Ø§ÙØªØ±Ø§Ø¶ÙŠØ©
+        </span>
+
+        <input
+          type="number"
+          min={1}
+          value={
+            form
+              .defaultEpisodeDurationMinutes
+          }
+          placeholder="Ø¨Ø§Ù„Ø¯Ù‚Ø§Ø¦Ù‚"
+          onChange={(event) => {
+            onChange({
+              defaultEpisodeDurationMinutes:
+                event.target.value,
+            });
+          }}
+        />
+      </label>
+
+      <label className="structure-form-full">
+        <span>ÙˆØµÙ Ø§Ù„Ù…ÙˆØ³Ù…</span>
+
+        <textarea
+          rows={9}
+          value={form.description}
+          placeholder="Ø§Ù„Ø®Ø· Ø§Ù„Ø¹Ø§Ù… Ù„Ù„Ù…ÙˆØ³Ù… ÙˆÙ…Ø³Ø§Ø±Ù‡ Ø§Ù„Ø¯Ø±Ø§Ù…ÙŠ..."
+          onChange={(event) => {
+            onChange({
+              description:
+                event.target.value,
+            });
+          }}
+        />
+      </label>
+
+      <FormActions
+        isSaving={isSaving}
+        isDirty={isDirty}
+        onReset={onReset}
+        submitLabel="Ø­ÙØ¸ Ø§Ù„Ù…ÙˆØ³Ù…"
+      />
+    </form>
+  );
+}
+
+interface EpisodeEditorProps {
+  project: Project;
+  seasons: Season[];
+
+  form: EpisodeFormState;
+
+  isSaving: boolean;
+  isDirty: boolean;
+
+  onChange: (
+    changes:
+      Partial<EpisodeFormState>,
+  ) => void;
+
+  onReset: () => void;
+  onSubmit: () => void;
+}
+
+function EpisodeEditor({
+  project,
+  seasons,
+  form,
+  isSaving,
+  isDirty,
+  onChange,
+  onReset,
+  onSubmit,
+}: EpisodeEditorProps) {
+  function handleSubmit(
+    event: FormEvent<HTMLFormElement>,
+  ): void {
+    event.preventDefault();
+    onSubmit();
+  }
+
+  return (
+    <form
+      className="structure-form"
+      onSubmit={handleSubmit}
+    >
+      {project.projectType ===
+        "series" && (
+        <label>
+          <span>Ø§Ù„Ù…ÙˆØ³Ù…</span>
+
+          <select
+            required
+            value={form.seasonId}
+            onChange={(event) => {
+              onChange({
+                seasonId:
+                  event.target.value,
+              });
+            }}
+          >
+            <option value="">
+              Ø§Ø®ØªØ± Ø§Ù„Ù…ÙˆØ³Ù…
+            </option>
+
+            {seasons.map(
+              (season) => (
+                <option
+                  key={season.id}
+                  value={season.id}
+                >
+                  Ø§Ù„Ù…ÙˆØ³Ù… {season.number}
+                  {season.title
+                    ? ` â€” ${season.title}`
+                    : ""}
+                </option>
+              ),
+            )}
+          </select>
+        </label>
+      )}
+
+      <label>
+        <span>Ø±Ù‚Ù… Ø§Ù„Ø­Ù„Ù‚Ø©</span>
+
+        <input
+          type="number"
+          min={1}
+          required
+          value={form.number}
+          onChange={(event) => {
+            onChange({
+              number:
+                event.target.value,
+            });
+          }}
+        />
+      </label>
+
+      <label>
+        <span>Ø¹Ù†ÙˆØ§Ù† Ø§Ù„Ø­Ù„Ù‚Ø©</span>
+
+        <input
+          type="text"
+          value={form.title}
+          placeholder="Ø¹Ù†ÙˆØ§Ù† Ø§Ø®ØªÙŠØ§Ø±ÙŠ"
+          onChange={(event) => {
+            onChange({
+              title:
+                event.target.value,
+            });
+          }}
+        />
+      </label>
+
+      <label>
+        <span>Ø§Ù„Ø­Ø§Ù„Ø©</span>
+
+        <select
+          value={form.status}
+          onChange={(event) => {
+            onChange({
+              status:
+                event.target
+                  .value as EpisodeStatus,
+            });
+          }}
+        >
+          <option value="outline">
+            Ù…Ø®Ø·Ø· Ø£ÙˆÙ„ÙŠ
+          </option>
+
+          <option value="draft">
+            Ù…Ø³ÙˆØ¯Ø©
+          </option>
+
+          <option value="review">
+            Ù‚ÙŠØ¯ Ø§Ù„Ù…Ø±Ø§Ø¬Ø¹Ø©
+          </option>
+
+          <option value="final">
+            Ù†Ù‡Ø§Ø¦ÙŠØ©
+          </option>
+        </select>
+      </label>
+
+      <label>
+        <span>Ø§Ù„Ù…Ø¯Ø© Ø§Ù„Ù…Ø³ØªÙ‡Ø¯ÙØ©</span>
+
+        <input
+          type="number"
+          min={1}
+          required
+          value={
+            form.targetDurationMinutes
+          }
+          onChange={(event) => {
+            onChange({
+              targetDurationMinutes:
+                event.target.value,
+            });
+          }}
+        />
+      </label>
+
+      <label>
+        <span>
+          Ø§Ù„Ù…Ø¯Ø© Ø§Ù„ØªÙ‚Ø¯ÙŠØ±ÙŠØ© Ø¨Ø§Ù„Ø«ÙˆØ§Ù†ÙŠ
+        </span>
+
+        <input
+          type="number"
+          min={0}
+          value={
+            form
+              .estimatedDurationSeconds
+          }
+          placeholder="ØªÙØ­Ø³Ø¨ Ù„Ø§Ø­Ù‚Ù‹Ø§"
+          onChange={(event) => {
+            onChange({
+              estimatedDurationSeconds:
+                event.target.value,
+            });
+          }}
+        />
+      </label>
+
+      <label className="structure-form-full">
+        <span>Ù…Ù„Ø®Øµ Ø§Ù„Ø­Ù„Ù‚Ø©</span>
+
+        <textarea
+          rows={8}
+          value={form.synopsis}
+          placeholder="Ù…Ù„Ø®Øµ Ø§Ù„Ø£Ø­Ø¯Ø§Ø« ÙˆØ§Ù„Ù…Ø³Ø§Ø± Ø§Ù„Ø¯Ø±Ø§Ù…ÙŠ Ù„Ù„Ø­Ù„Ù‚Ø©..."
+          onChange={(event) => {
+            onChange({
+              synopsis:
+                event.target.value,
+            });
+          }}
+        />
+      </label>
+
+      <label className="structure-form-full">
+        <span>Ù…Ù„Ø§Ø­Ø¸Ø§Øª</span>
+
+        <textarea
+          rows={5}
+          value={form.notes}
+          placeholder="Ù…Ù„Ø§Ø­Ø¸Ø§Øª Ø§Ù„ÙƒØªØ§Ø¨Ø© ÙˆØ§Ù„Ø¨Ù†Ø§Ø¡..."
+          onChange={(event) => {
+            onChange({
+              notes:
+                event.target.value,
+            });
+          }}
+        />
+      </label>
+
+      <FormActions
+        isSaving={isSaving}
+        isDirty={isDirty}
+        onReset={onReset}
+        submitLabel="Ø­ÙØ¸ Ø§Ù„Ø­Ù„Ù‚Ø©"
+      />
+    </form>
+  );
+}
+
+interface FormActionsProps {
+  isSaving: boolean;
+  isDirty: boolean;
+
+  onReset: () => void;
+
+  submitLabel: string;
+}
+
+function FormActions({
+  isSaving,
+  isDirty,
+  onReset,
+  submitLabel,
+}: FormActionsProps) {
+  return (
+    <div className="structure-form-actions">
+      <button
+        type="button"
+        className="structure-secondary-button"
+        disabled={
+          isSaving ||
+          !isDirty
+        }
+        onClick={onReset}
+      >
+        Ø§Ù„ØªØ±Ø§Ø¬Ø¹ Ø¹Ù† Ø§Ù„ØªØºÙŠÙŠØ±Ø§Øª
+      </button>
+
+      <button
+        type="submit"
+        className="structure-primary-button"
+        disabled={
+          isSaving ||
+          !isDirty
+        }
+        title="Ø­ÙØ¸ â€” Ctrl + S"
+      >
+        {isSaving
+          ? "Ø¬Ø§Ø±Ù Ø§Ù„Ø­ÙØ¸..."
+          : submitLabel}
+      </button>
+    </div>
+  );
+}
+
+function seasonToForm(
+  season: Season,
+): SeasonFormState {
+  return {
+    number:
+      String(season.number),
+
+    title:
+      season.title ?? "",
+
+    description:
+      season.description ?? "",
+
+    plannedEpisodeCount:
+      season.plannedEpisodeCount ===
+      null
+        ? ""
+        : String(
+            season
+              .plannedEpisodeCount,
+          ),
+
+    defaultEpisodeDurationMinutes:
+      season
+        .defaultEpisodeDurationMinutes ===
+      null
+        ? ""
+        : String(
+            season
+              .defaultEpisodeDurationMinutes,
+          ),
+  };
+}
+
+function episodeToForm(
+  episode: Episode,
+): EpisodeFormState {
+  return {
+    seasonId:
+      episode.seasonId ?? "",
+
+    number:
+      String(episode.number),
+
+    title:
+      episode.title ?? "",
+
+    synopsis:
+      episode.synopsis ?? "",
+
+    notes:
+      episode.notes ?? "",
+
+    targetDurationMinutes:
+      String(
+        episode
+          .targetDurationMinutes,
+      ),
+
+    estimatedDurationSeconds:
+      episode
+        .estimatedDurationSeconds ===
+      null
+        ? ""
+        : String(
+            episode
+              .estimatedDurationSeconds,
+          ),
+
+    status:
+      episode.status,
+  };
+}
+
+function getNextSeasonNumber(
+  seasons: Season[],
+): number {
+  return seasons.reduce(
+    (maximum, season) =>
+      Math.max(
+        maximum,
+        season.number,
+      ),
+    0,
+  ) + 1;
+}
+
+function getNextEpisodeNumber(
+  episodes: Episode[],
+  seasonId: string | null,
+): number {
+  return episodes
+    .filter(
+      (episode) =>
+        episode.seasonId ===
+        seasonId,
+    )
+    .reduce(
+      (maximum, episode) =>
+        Math.max(
+          maximum,
+          episode.number,
+        ),
+      0,
+    ) + 1;
+}
+
+function parsePositiveInteger(
+  value: string,
+): number | null {
+  const parsedValue =
+    Number(value);
+
+  if (
+    !Number.isInteger(parsedValue) ||
+    parsedValue < 1
+  ) {
+    return null;
+  }
+
+  return parsedValue;
+}
+
+function parseOptionalPositiveInteger(
+  value: string,
+): number | null {
+  if (!value.trim()) {
+    return null;
+  }
+
+  return parsePositiveInteger(
+    value,
+  );
+}
+
+function parseOptionalNonNegativeInteger(
+  value: string,
+): number | null {
+  if (!value.trim()) {
+    return null;
+  }
+
+  const parsedValue =
+    Number(value);
+
+  if (
+    !Number.isInteger(parsedValue) ||
+    parsedValue < 0
+  ) {
+    return null;
+  }
+
+  return parsedValue;
+}
+
+function getEpisodeStatusLabel(
+  status: EpisodeStatus,
+): string {
+  switch (status) {
+    case "outline":
+      return "Ù…Ø®Ø·Ø· Ø£ÙˆÙ„ÙŠ";
+
+    case "draft":
+      return "Ù…Ø³ÙˆØ¯Ø©";
+
+    case "review":
+      return "Ù‚ÙŠØ¯ Ø§Ù„Ù…Ø±Ø§Ø¬Ø¹Ø©";
+
+    case "final":
+      return "Ù†Ù‡Ø§Ø¦ÙŠØ©";
+  }
+}

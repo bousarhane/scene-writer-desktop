@@ -13,6 +13,10 @@ export type ProjectType =
   | "single_episode"
   | "stage_play";
 
+export type SeriesStructure =
+  | "single_season"
+  | "multi_season";
+
 export type ProjectStatus =
   | "draft"
   | "in_progress"
@@ -20,13 +24,17 @@ export type ProjectStatus =
   | "completed"
   | "archived";
 
-export interface Project extends TimestampedEntity {
+export interface Project
+  extends TimestampedEntity {
   id: UUID;
 
   title: string;
   subtitle: string | null;
 
   projectType: ProjectType;
+  seriesStructure:
+    SeriesStructure | null;
+
   status: ProjectStatus;
 
   language: AppLanguage;
@@ -38,10 +46,14 @@ export interface Project extends TimestampedEntity {
   plannedSeasonCount: number | null;
   plannedEpisodeCount: number | null;
 
-  defaultEpisodeDurationMinutes: number | null;
+  defaultEpisodeDurationMinutes:
+    number | null;
 
-  defaultMinimumScenesPerEpisode: number | null;
-  defaultMaximumScenesPerEpisode: number | null;
+  defaultMinimumScenesPerEpisode:
+    number | null;
+
+  defaultMaximumScenesPerEpisode:
+    number | null;
 
   lastOpenedAt: ISODateTime | null;
 }

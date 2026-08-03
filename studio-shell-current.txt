@@ -1,4 +1,4 @@
-:root {
+﻿:root {
   --sidebar-width: 270px;
   --background: #eef1f5;
   --surface: #ffffff;
@@ -11,9 +11,6 @@
   --sidebar-muted: #aaa199;
   --accent: #84654b;
   --accent-hover: #6f523b;
-  --accent-soft: #f2e8de;
-  --success-soft: #e8f1ea;
-  --success-text: #4f7c59;
 
   font-family: "Segoe UI", Tahoma, Arial, sans-serif;
   color: var(--text);
@@ -50,7 +47,7 @@ button {
   cursor: pointer;
 }
 
-/* البنية العامة */
+/* Ø§Ù„Ø¨Ù†ÙŠØ© Ø§Ù„Ø¹Ø§Ù…Ø©: Ø§Ù„Ø´Ø±ÙŠØ· Ø§Ù„Ø¬Ø§Ù†Ø¨ÙŠ ÙÙŠ Ø§Ù„ÙŠÙ…ÙŠÙ† */
 
 .studio-shell {
   display: grid;
@@ -118,7 +115,7 @@ button {
   direction: rtl;
 }
 
-/* هوية التطبيق */
+/* Ù‡ÙˆÙŠØ© Ø§Ù„ØªØ·Ø¨ÙŠÙ‚ */
 
 .studio-brand {
   display: flex;
@@ -150,7 +147,7 @@ button {
   height: 42px;
   flex: 0 0 42px;
 
-  border-radius: 12px;
+  border-radius: 11px;
 
   color: #ffffff;
   background: var(--accent);
@@ -178,7 +175,7 @@ button {
   font-size: 12px;
 }
 
-/* المكتبة داخل الشريط */
+/* Ù…ÙƒØªØ¨Ø© Ø§Ù„Ù…Ø´Ø§Ø±ÙŠØ¹ Ø¯Ø§Ø®Ù„ Ø§Ù„Ø´Ø±ÙŠØ· */
 
 .sidebar-library {
   padding: 18px 13px;
@@ -190,56 +187,45 @@ button {
   justify-content: center;
 
   width: 100%;
-  min-height: 46px;
+  min-height: 44px;
 
   gap: 8px;
-  margin-bottom: 18px;
+  margin-bottom: 23px;
 
   border: 1px solid rgba(210, 177, 145, 0.3);
-  border-radius: 10px;
+  border-radius: 9px;
 
   color: #ffffff;
   background: var(--accent);
-  box-shadow: 0 10px 24px rgba(111, 82, 59, 0.22);
 }
 
 .sidebar-create-button:hover {
   background: var(--accent-hover);
 }
 
-.sidebar-library-navigation {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.sidebar-library-navigation-button {
+.sidebar-section-title {
   display: flex;
   align-items: center;
+  justify-content: space-between;
 
-  width: 100%;
-  min-height: 42px;
-
-  gap: 10px;
-  padding: 8px 10px;
-
-  border: 1px solid transparent;
-  border-radius: 10px;
+  margin: 0 8px 11px;
 
   color: var(--sidebar-muted);
-  background: transparent;
-  text-align: right;
+  font-size: 12px;
 }
 
-.sidebar-library-navigation-button:hover {
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.05);
-}
+.sidebar-section-title strong {
+  display: grid;
+  place-items: center;
 
-.sidebar-library-navigation-button.is-active {
-  border-color: rgba(185, 149, 116, 0.32);
-  color: #ffffff;
-  background: rgba(132, 101, 75, 0.28);
+  min-width: 24px;
+  height: 24px;
+  padding: 0 7px;
+
+  border-radius: 999px;
+
+  color: #ded4cb;
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .sidebar-empty-projects {
@@ -247,136 +233,6 @@ button {
   color: #8f8780;
   font-size: 12px;
   text-align: center;
-}
-
-/* المشروع المفتوح داخل الشريط */
-
-.sidebar-project-header {
-  padding: 16px 13px 8px;
-}
-
-.sidebar-back-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  width: 100%;
-  min-height: 42px;
-
-  gap: 10px;
-  margin-bottom: 14px;
-  padding: 8px 12px;
-
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
-
-  color: #ddd2c8;
-  background: transparent;
-}
-
-.sidebar-back-button:hover {
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.sidebar-current-project {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.sidebar-current-project-mark {
-  display: grid;
-  place-items: center;
-
-  width: 42px;
-  height: 42px;
-  flex: 0 0 42px;
-
-  border-radius: 11px;
-
-  color: #ffffff;
-  background: var(--accent);
-
-  font-size: 18px;
-  font-weight: 800;
-}
-
-.sidebar-current-project-copy {
-  min-width: 0;
-}
-
-.sidebar-current-project-copy strong,
-.sidebar-current-project-copy small {
-  display: block;
-}
-
-.sidebar-current-project-copy strong {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 15px;
-}
-
-.sidebar-current-project-copy small {
-  margin-top: 4px;
-  color: var(--sidebar-muted);
-  font-size: 12px;
-}
-
-.sidebar-project-navigation {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 10px 13px 0;
-  overflow: auto;
-}
-
-.sidebar-project-navigation-button {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-
-  width: 100%;
-  min-height: 46px;
-
-  gap: 10px;
-  padding: 8px 10px;
-
-  border: 1px solid transparent;
-  border-radius: 10px;
-
-  color: #ddd2c8;
-  background: transparent;
-  text-align: right;
-}
-
-.sidebar-project-navigation-button:hover {
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.sidebar-project-navigation-button.is-active {
-  border-color: rgba(185, 149, 116, 0.32);
-  color: #ffffff;
-  background: rgba(132, 101, 75, 0.32);
-}
-
-.sidebar-project-navigation-symbol {
-  display: grid;
-  place-items: center;
-
-  width: 30px;
-  height: 30px;
-  flex: 0 0 30px;
-
-  border-radius: 8px;
-
-  color: #f4eee8;
-  background: rgba(255, 255, 255, 0.08);
-
-  font-size: 13px;
-  font-weight: 800;
 }
 
 .sidebar-spacer {
@@ -444,7 +300,7 @@ button {
   font-weight: 600;
 }
 
-/* الشريط العلوي */
+/* Ø§Ù„Ø´Ø±ÙŠØ· Ø§Ù„Ø¹Ù„ÙˆÙŠ */
 
 .studio-topbar {
   display: flex;
@@ -491,7 +347,7 @@ button {
   height: 39px;
 
   border: 1px solid #d9dde3;
-  border-radius: 10px;
+  border-radius: 9px;
 
   color: #4d5157;
   background: #ffffff;
@@ -524,7 +380,7 @@ button {
   box-shadow: 0 0 0 4px rgba(91, 154, 106, 0.12);
 }
 
-/* مساحة العمل */
+/* Ù…Ù†Ø·Ù‚Ø© Ø§Ù„Ø¹Ù…Ù„ */
 
 .studio-workspace {
   flex: 1;
@@ -540,14 +396,14 @@ button {
 }
 
 .library-view {
-  width: min(1220px, calc(100% - 48px));
+  width: min(1120px, calc(100% - 48px));
   margin: 0 auto;
   padding: 34px 0 64px;
 }
 
 .library-heading {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
 
   gap: 24px;
@@ -556,27 +412,23 @@ button {
 
 .library-heading h1 {
   margin: 0;
-  font-size: 34px;
-  line-height: 1.15;
+  font-size: 31px;
 }
 
 .library-heading p {
-  margin: 10px 0 0;
+  margin: 8px 0 0;
   color: var(--muted);
-  font-size: 18px;
 }
 
 .primary-button {
-  min-height: 44px;
-  padding: 10px 20px;
+  min-height: 42px;
+  padding: 9px 18px;
 
   border: 0;
-  border-radius: 10px;
+  border-radius: 9px;
 
   color: #ffffff;
   background: var(--accent);
-
-  box-shadow: 0 10px 24px rgba(111, 82, 59, 0.2);
 }
 
 .primary-button:hover {
@@ -591,11 +443,13 @@ button {
   padding: 58px 30px;
 
   border: 1px solid var(--border);
-  border-radius: 18px;
+  border-radius: 15px;
 
   background: rgba(255, 255, 255, 0.96);
 
-  box-shadow: 0 15px 42px rgba(35, 41, 48, 0.07);
+  box-shadow:
+    0 15px 42px
+    rgba(35, 41, 48, 0.07);
 
   text-align: center;
 }
@@ -630,220 +484,7 @@ button {
   line-height: 1.8;
 }
 
-/* بطاقات مكتبة المشاريع */
-
-.project-library-grid {
-  display: grid;
-  grid-template-columns:
-    repeat(
-      auto-fill,
-      minmax(220px, 1fr)
-    );
-
-  gap: 16px;
-  align-items: start;
-}
-
-.project-library-card {
-  display: grid;
-  grid-template-columns:
-    minmax(0, 1fr)
-    auto;
-
-  grid-template-areas:
-    "title type"
-    "date date"
-    "open open";
-
-  min-width: 0;
-  min-height: 126px;
-  padding: 14px 16px 13px;
-
-  border: 1px solid #e4e1de;
-  border-radius: 15px;
-
-  color: var(--text);
-  background:
-    linear-gradient(
-      180deg,
-      #ffffff 0%,
-      #fcfbfa 100%
-    );
-
-  box-shadow:
-    0 8px 22px
-    rgba(35, 41, 48, 0.055);
-
-  text-align: right;
-
-  transition:
-    transform 160ms ease,
-    box-shadow 160ms ease,
-    border-color 160ms ease;
-}
-
-.project-library-card:hover {
-  transform: translateY(-2px);
-
-  border-color: #c8aaa5;
-
-  box-shadow:
-    0 14px 30px
-    rgba(35, 41, 48, 0.09);
-}
-
-.project-library-card-topline {
-  display: contents;
-}
-
-.project-library-type {
-  grid-area: type;
-
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-
-  align-self: start;
-  justify-self: end;
-
-  min-height: 24px;
-  padding: 0 10px;
-
-  border-radius: 999px;
-
-  color: #ffffff;
-  background: #a75f5d;
-
-  font-size: 11px;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.project-library-type::after {
-  content: "";
-
-  width: 8px;
-  height: 8px;
-  margin-inline-start: 7px;
-
-  border-radius: 50%;
-
-  background: #8e4c4b;
-}
-
-.project-library-status {
-  display: none;
-}
-
-.project-library-card-main {
-  grid-area: title;
-
-  display: block;
-
-  min-width: 0;
-  padding-inline-end: 12px;
-}
-
-.project-library-mark {
-  display: none;
-}
-
-.project-library-copy {
-  min-width: 0;
-}
-
-.project-library-copy strong {
-  display: block;
-  overflow: hidden;
-
-  color: #211f1d;
-
-  font-size: 18px;
-  font-weight: 750;
-  line-height: 1.35;
-
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.project-library-copy small {
-  display: none;
-}
-
-.project-library-meta {
-  grid-area: date;
-
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-
-  min-width: 0;
-  margin-top: 8px;
-
-  border: 0;
-  padding: 0;
-}
-
-.project-library-meta span:first-child {
-  display: none;
-}
-
-.project-library-meta span:last-child {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-
-  min-height: 22px;
-  padding: 0 8px;
-
-  border-radius: 999px;
-
-  color: #9a5d58;
-  background: #f3eddf;
-
-  font-size: 10px;
-  font-weight: 700;
-  direction: ltr;
-}
-
-.project-library-open {
-  grid-area: open;
-
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-
-  width: min(170px, 100%);
-  min-height: 34px;
-
-  margin-top: 12px;
-  justify-self: center;
-  padding: 0 18px;
-
-  border: 0;
-  border-radius: 999px;
-
-  color: #ffffff;
-  background: #a75f5d;
-
-  box-shadow:
-    0 7px 16px
-    rgba(167, 95, 93, 0.18);
-
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.project-library-open:hover {
-  background: #8f4f4e;
-}
-
-.project-library-open span {
-  display: none;
-}
-
-
-/* الإعدادات */
+/* Ø§Ù„Ø¥Ø¹Ø¯Ø§Ø¯Ø§Øª */
 
 .settings-view {
   display: grid;
@@ -862,7 +503,9 @@ button {
 
   background: rgba(255, 255, 255, 0.96);
 
-  box-shadow: 0 15px 42px rgba(35, 41, 48, 0.07);
+  box-shadow:
+    0 15px 42px
+    rgba(35, 41, 48, 0.07);
 
   text-align: center;
 }
@@ -896,12 +539,6 @@ button {
   line-height: 1.8;
 }
 
-@media (max-width: 1100px) {
-  .project-library-grid {
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  }
-}
-
 @media (max-width: 900px) {
   :root {
     --sidebar-width: 230px;
@@ -909,16 +546,5 @@ button {
 
   .local-save-status {
     display: none;
-  }
-
-  .library-heading {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-}
-
-@media (max-width: 700px) {
-  .project-library-grid {
-    grid-template-columns: 1fr;
   }
 }

@@ -1,4 +1,4 @@
-import type {
+﻿import type {
   Project,
   ProjectType,
 } from "../../types";
@@ -19,6 +19,9 @@ interface StudioSidebarProps {
     | "settings"
     | "project";
 
+  projects: Project[];
+  isLoadingProjects: boolean;
+
   currentProject: Project | null;
 
   activeProjectSection:
@@ -28,6 +31,10 @@ interface StudioSidebarProps {
   onShowSettings: () => void;
   onCreateProject: () => void;
 
+  onOpenProject: (
+    projectId: string,
+  ) => void;
+
   onSelectProjectSection: (
     section: ProjectWorkspaceSection,
   ) => void;
@@ -36,11 +43,14 @@ interface StudioSidebarProps {
 export function StudioSidebar({
   mode,
   activeView,
+  projects,
+  isLoadingProjects,
   currentProject,
   activeProjectSection,
   onShowLibrary,
   onShowSettings,
   onCreateProject,
+  onOpenProject,
   onSelectProjectSection,
 }: StudioSidebarProps) {
   return (
@@ -56,18 +66,21 @@ export function StudioSidebar({
 
         <span className="studio-brand-copy">
           <strong>Scene Writer</strong>
-          <small>استوديو الكتابة</small>
+          <small>Ø§Ø³ØªÙˆØ¯ÙŠÙˆ Ø§Ù„ÙƒØªØ§Ø¨Ø©</small>
         </span>
       </button>
 
       {mode === "library" ? (
         <LibrarySidebarContent
-          activeView={activeView}
-          onShowLibrary={
-            onShowLibrary
+          projects={projects}
+          isLoadingProjects={
+            isLoadingProjects
           }
           onCreateProject={
             onCreateProject
+          }
+          onOpenProject={
+            onOpenProject
           }
         />
       ) : (
@@ -98,15 +111,15 @@ export function StudioSidebar({
           onClick={onShowSettings}
         >
           <span className="sidebar-settings-icon">
-            إ
+            Ø¥
           </span>
 
-          <span>الإعدادات</span>
+          <span>Ø§Ù„Ø¥Ø¹Ø¯Ø§Ø¯Ø§Øª</span>
         </button>
       )}
 
       <footer className="sidebar-footer">
-        <span>الإصدار التجريبي</span>
+        <span>Ø§Ù„Ø¥ØµØ¯Ø§Ø± Ø§Ù„ØªØ¬Ø±ÙŠØ¨ÙŠ</span>
         <strong>0.1.0</strong>
       </footer>
     </aside>
@@ -114,19 +127,21 @@ export function StudioSidebar({
 }
 
 interface LibrarySidebarContentProps {
-  activeView:
-    | "library"
-    | "settings"
-    | "project";
+  projects: Project[];
+  isLoadingProjects: boolean;
 
-  onShowLibrary: () => void;
   onCreateProject: () => void;
+
+  onOpenProject: (
+    projectId: string,
+  ) => void;
 }
 
 function LibrarySidebarContent({
-  activeView,
-  onShowLibrary,
+  projects,
+  isLoadingProjects,
   onCreateProject,
+  onOpenProject,
 }: LibrarySidebarContentProps) {
   return (
     <div className="sidebar-library">
@@ -135,30 +150,56 @@ function LibrarySidebarContent({
         className="sidebar-create-button"
         onClick={onCreateProject}
       >
-        <span aria-hidden="true">＋</span>
-        <span>مشروع جديد</span>
+        <span aria-hidden="true">ï¼‹</span>
+        <span>Ù…Ø´Ø±ÙˆØ¹ Ø¬Ø¯ÙŠØ¯</span>
       </button>
 
-      <nav
-        className="sidebar-library-navigation"
-        aria-label="تنقل المكتبة"
-      >
-        <button
-          type="button"
-          className={
-            activeView === "library"
-              ? "sidebar-library-navigation-button is-active"
-              : "sidebar-library-navigation-button"
-          }
-          onClick={onShowLibrary}
-        >
-          <span className="sidebar-settings-icon">
-            م
-          </span>
+      <div className="sidebar-section-title">
+        <span>Ø§Ù„Ù…Ø´Ø§Ø±ÙŠØ¹</span>
+        <strong>{projects.length}</strong>
+      </div>
 
-          <span>مكتبة المشاريع</span>
-        </button>
-      </nav>
+      {isLoadingProjects ? (
+        <div className="sidebar-empty-projects">
+          Ø¬Ø§Ø±Ù ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ù…Ø´Ø§Ø±ÙŠØ¹...
+        </div>
+      ) : projects.length === 0 ? (
+        <div className="sidebar-empty-projects">
+          Ù„Ø§ ØªÙˆØ¬Ø¯ Ù…Ø´Ø§Ø±ÙŠØ¹ Ø¨Ø¹Ø¯
+        </div>
+      ) : (
+        <div className="sidebar-project-list">
+          {projects.map((project) => (
+            <button
+              key={project.id}
+              type="button"
+              className="sidebar-project-button"
+              title={project.title}
+              onClick={() => {
+                onOpenProject(project.id);
+              }}
+            >
+              <span className="sidebar-project-letter">
+                {getProjectInitial(
+                  project.title,
+                )}
+              </span>
+
+              <span className="sidebar-project-copy">
+                <strong>
+                  {project.title}
+                </strong>
+
+                <small>
+                  {formatProjectDescription(
+                    project,
+                  )}
+                </small>
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -185,14 +226,14 @@ function ProjectSidebarContent({
   if (project === null) {
     return (
       <div className="sidebar-empty-projects">
-        جارٍ فتح المشروع...
+        Ø¬Ø§Ø±Ù ÙØªØ­ Ø§Ù„Ù…Ø´Ø±ÙˆØ¹...
       </div>
     );
   }
 
   const navigationItems =
     getProjectNavigationItems(
-      project,
+      project.projectType,
     );
 
   return (
@@ -204,11 +245,11 @@ function ProjectSidebarContent({
           onClick={onBackToLibrary}
         >
           <span aria-hidden="true">
-            ←
+            â†
           </span>
 
           <span>
-            العودة إلى المكتبة
+            Ø§Ù„Ø¹ÙˆØ¯Ø© Ø¥Ù„Ù‰ Ø§Ù„Ù…ÙƒØªØ¨Ø©
           </span>
         </button>
 
@@ -235,7 +276,7 @@ function ProjectSidebarContent({
 
       <nav
         className="sidebar-project-navigation"
-        aria-label="أقسام المشروع"
+        aria-label="Ø£Ù‚Ø³Ø§Ù… Ø§Ù„Ù…Ø´Ø±ÙˆØ¹"
       >
         {navigationItems.map((item) => {
           const isActive =
@@ -276,87 +317,61 @@ interface ProjectNavigationItem {
 }
 
 function getProjectNavigationItems(
-  project: Project,
+  projectType: ProjectType,
 ): ProjectNavigationItem[] {
   return [
     {
       section: "dashboard",
-      label: "لوحة المشروع",
-      symbol: "ل",
+      label: "Ù„ÙˆØ­Ø© Ø§Ù„Ù…Ø´Ø±ÙˆØ¹",
+      symbol: "Ù„",
     },
     {
       section: "story",
-      label: "الحكاية",
-      symbol: "ح",
+      label: "Ø§Ù„Ø­ÙƒØ§ÙŠØ©",
+      symbol: "Ø­",
     },
     {
       section: "characters",
-      label: "الشخصيات",
-      symbol: "ش",
+      label: "Ø§Ù„Ø´Ø®ØµÙŠØ§Øª",
+      symbol: "Ø´",
     },
     {
       section: "locations",
-      label: "الأماكن",
-      symbol: "أ",
+      label: "Ø§Ù„Ø£Ù…Ø§ÙƒÙ†",
+      symbol: "Ø£",
     },
     {
       section: "structure",
       label:
-        getStructureLabel(project),
-      symbol: "ب",
+        projectType === "series"
+          ? "Ø§Ù„Ù…ÙˆØ§Ø³Ù… ÙˆØ§Ù„Ø­Ù„Ù‚Ø§Øª"
+          : projectType ===
+              "stage_play"
+            ? "Ø¨Ù†ÙŠØ© Ø§Ù„Ù…Ø³Ø±Ø­ÙŠØ©"
+            : "Ø¨Ù†ÙŠØ© Ø§Ù„Ø¹Ù…Ù„",
+      symbol: "Ø¨",
     },
     {
       section: "scenes",
-      label: "التحرير",
-      symbol: "ك",
+      label: "Ø§Ù„Ù…Ø´Ø§Ù‡Ø¯",
+      symbol: "Ù…",
     },
     {
       section: "documents",
-      label: "الوثائق",
-      symbol: "و",
+      label: "Ø§Ù„ÙˆØ«Ø§Ø¦Ù‚",
+      symbol: "Ùˆ",
     },
     {
       section: "export",
-      label: "التصدير",
-      symbol: "ت",
+      label: "Ø§Ù„ØªØµØ¯ÙŠØ±",
+      symbol: "Øª",
     },
     {
       section: "project-settings",
-      label: "إعدادات المشروع",
-      symbol: "إ",
+      label: "Ø¥Ø¹Ø¯Ø§Ø¯Ø§Øª Ø§Ù„Ù…Ø´Ø±ÙˆØ¹",
+      symbol: "Ø¥",
     },
   ];
-}
-
-function getStructureLabel(
-  project: Project,
-): string {
-  if (
-    project.projectType ===
-    "series"
-  ) {
-    return project
-      .seriesStructure ===
-      "multi_season"
-      ? "المواسم والحلقات"
-      : "الحلقات";
-  }
-
-  if (
-    project.projectType ===
-    "single_episode"
-  ) {
-    return "بنية الحلقة";
-  }
-
-  if (
-    project.projectType ===
-    "stage_play"
-  ) {
-    return "بنية المسرحية";
-  }
-
-  return "بنية العمل";
 }
 
 function getProjectInitial(
@@ -367,7 +382,24 @@ function getProjectInitial(
 
   return normalizedTitle
     ? normalizedTitle.charAt(0)
-    : "م";
+    : "Ù…";
+}
+
+function formatProjectDescription(
+  project: Project,
+): string {
+  if (
+    project.projectType === "series"
+  ) {
+    const episodeCount =
+      project.plannedEpisodeCount ?? "â€”";
+
+    return `${episodeCount} Ø­Ù„Ù‚Ø©`;
+  }
+
+  return getProjectTypeLabel(
+    project.projectType,
+  );
 }
 
 function getProjectTypeLabel(
@@ -375,18 +407,18 @@ function getProjectTypeLabel(
 ): string {
   switch (projectType) {
     case "series":
-      return "مسلسل تلفزيوني";
+      return "Ù…Ø³Ù„Ø³Ù„ ØªÙ„ÙØ²ÙŠÙˆÙ†ÙŠ";
 
     case "film":
-      return "فيلم سينمائي";
+      return "ÙÙŠÙ„Ù… Ø³ÙŠÙ†Ù…Ø§Ø¦ÙŠ";
 
     case "short_film":
-      return "فيلم قصير";
+      return "ÙÙŠÙ„Ù… Ù‚ØµÙŠØ±";
 
     case "single_episode":
-      return "حلقة منفردة";
+      return "Ø­Ù„Ù‚Ø© Ù…Ù†ÙØ±Ø¯Ø©";
 
     case "stage_play":
-      return "مسرحية";
+      return "Ù…Ø³Ø±Ø­ÙŠØ©";
   }
 }

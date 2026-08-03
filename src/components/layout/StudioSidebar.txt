@@ -19,6 +19,9 @@ interface StudioSidebarProps {
     | "settings"
     | "project";
 
+  projects: Project[];
+  isLoadingProjects: boolean;
+
   currentProject: Project | null;
 
   activeProjectSection:
@@ -28,6 +31,10 @@ interface StudioSidebarProps {
   onShowSettings: () => void;
   onCreateProject: () => void;
 
+  onOpenProject: (
+    projectId: string,
+  ) => void;
+
   onSelectProjectSection: (
     section: ProjectWorkspaceSection,
   ) => void;
@@ -36,11 +43,14 @@ interface StudioSidebarProps {
 export function StudioSidebar({
   mode,
   activeView,
+  projects,
+  isLoadingProjects,
   currentProject,
   activeProjectSection,
   onShowLibrary,
   onShowSettings,
   onCreateProject,
+  onOpenProject,
   onSelectProjectSection,
 }: StudioSidebarProps) {
   return (
@@ -62,12 +72,15 @@ export function StudioSidebar({
 
       {mode === "library" ? (
         <LibrarySidebarContent
-          activeView={activeView}
-          onShowLibrary={
-            onShowLibrary
+          projects={projects}
+          isLoadingProjects={
+            isLoadingProjects
           }
           onCreateProject={
             onCreateProject
+          }
+          onOpenProject={
+            onOpenProject
           }
         />
       ) : (
@@ -114,19 +127,21 @@ export function StudioSidebar({
 }
 
 interface LibrarySidebarContentProps {
-  activeView:
-    | "library"
-    | "settings"
-    | "project";
+  projects: Project[];
+  isLoadingProjects: boolean;
 
-  onShowLibrary: () => void;
   onCreateProject: () => void;
+
+  onOpenProject: (
+    projectId: string,
+  ) => void;
 }
 
 function LibrarySidebarContent({
-  activeView,
-  onShowLibrary,
+  projects,
+  isLoadingProjects,
   onCreateProject,
+  onOpenProject,
 }: LibrarySidebarContentProps) {
   return (
     <div className="sidebar-library">
@@ -139,26 +154,52 @@ function LibrarySidebarContent({
         <span>مشروع جديد</span>
       </button>
 
-      <nav
-        className="sidebar-library-navigation"
-        aria-label="تنقل المكتبة"
-      >
-        <button
-          type="button"
-          className={
-            activeView === "library"
-              ? "sidebar-library-navigation-button is-active"
-              : "sidebar-library-navigation-button"
-          }
-          onClick={onShowLibrary}
-        >
-          <span className="sidebar-settings-icon">
-            م
-          </span>
+      <div className="sidebar-section-title">
+        <span>المشاريع</span>
+        <strong>{projects.length}</strong>
+      </div>
 
-          <span>مكتبة المشاريع</span>
-        </button>
-      </nav>
+      {isLoadingProjects ? (
+        <div className="sidebar-empty-projects">
+          جارٍ تحميل المشاريع...
+        </div>
+      ) : projects.length === 0 ? (
+        <div className="sidebar-empty-projects">
+          لا توجد مشاريع بعد
+        </div>
+      ) : (
+        <div className="sidebar-project-list">
+          {projects.map((project) => (
+            <button
+              key={project.id}
+              type="button"
+              className="sidebar-project-button"
+              title={project.title}
+              onClick={() => {
+                onOpenProject(project.id);
+              }}
+            >
+              <span className="sidebar-project-letter">
+                {getProjectInitial(
+                  project.title,
+                )}
+              </span>
+
+              <span className="sidebar-project-copy">
+                <strong>
+                  {project.title}
+                </strong>
+
+                <small>
+                  {formatProjectDescription(
+                    project,
+                  )}
+                </small>
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -192,7 +233,7 @@ function ProjectSidebarContent({
 
   const navigationItems =
     getProjectNavigationItems(
-      project,
+      project.projectType,
     );
 
   return (
@@ -276,7 +317,7 @@ interface ProjectNavigationItem {
 }
 
 function getProjectNavigationItems(
-  project: Project,
+  projectType: ProjectType,
 ): ProjectNavigationItem[] {
   return [
     {
@@ -302,13 +343,18 @@ function getProjectNavigationItems(
     {
       section: "structure",
       label:
-        getStructureLabel(project),
+        projectType === "series"
+          ? "المواسم والحلقات"
+          : projectType ===
+              "stage_play"
+            ? "بنية المسرحية"
+            : "بنية العمل",
       symbol: "ب",
     },
     {
       section: "scenes",
-      label: "التحرير",
-      symbol: "ك",
+      label: "المشاهد",
+      symbol: "م",
     },
     {
       section: "documents",
@@ -328,37 +374,6 @@ function getProjectNavigationItems(
   ];
 }
 
-function getStructureLabel(
-  project: Project,
-): string {
-  if (
-    project.projectType ===
-    "series"
-  ) {
-    return project
-      .seriesStructure ===
-      "multi_season"
-      ? "المواسم والحلقات"
-      : "الحلقات";
-  }
-
-  if (
-    project.projectType ===
-    "single_episode"
-  ) {
-    return "بنية الحلقة";
-  }
-
-  if (
-    project.projectType ===
-    "stage_play"
-  ) {
-    return "بنية المسرحية";
-  }
-
-  return "بنية العمل";
-}
-
 function getProjectInitial(
   title: string,
 ): string {
@@ -368,6 +383,23 @@ function getProjectInitial(
   return normalizedTitle
     ? normalizedTitle.charAt(0)
     : "م";
+}
+
+function formatProjectDescription(
+  project: Project,
+): string {
+  if (
+    project.projectType === "series"
+  ) {
+    const episodeCount =
+      project.plannedEpisodeCount ?? "—";
+
+    return `${episodeCount} حلقة`;
+  }
+
+  return getProjectTypeLabel(
+    project.projectType,
+  );
 }
 
 function getProjectTypeLabel(

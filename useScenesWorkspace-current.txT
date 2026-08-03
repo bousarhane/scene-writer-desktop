@@ -1,0 +1,373 @@
+﻿import {
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
+
+import {
+  episodeService,
+  locationService,
+  sceneService,
+  type CreateLocationInput,
+  type CreateSceneInput,
+  type UpdateSceneInput,
+} from "../../application";
+
+import type {
+  Episode,
+  Location,
+  Scene,
+} from "../../types";
+
+export function useScenesWorkspace(
+  projectId: string,
+) {
+  const [scenes, setScenes] =
+    useState<Scene[]>([]);
+
+  const [episodes, setEpisodes] =
+    useState<Episode[]>([]);
+
+  const [locations, setLocations] =
+    useState<Location[]>([]);
+
+  const [isLoading, setIsLoading] =
+    useState(true);
+
+  const [isSaving, setIsSaving] =
+    useState(false);
+
+  const [error, setError] =
+    useState<string | null>(null);
+
+  const loadWorkspace =
+    useCallback(async (): Promise<void> => {
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const [
+          loadedScenes,
+          loadedEpisodes,
+          loadedLocations,
+        ] = await Promise.all([
+          sceneService.listScenes(
+            projectId,
+          ),
+
+          episodeService.listEpisodes(
+            projectId,
+          ),
+
+          locationService.listLocations(
+            projectId,
+          ),
+        ]);
+
+        setScenes(
+          sortScenes(loadedScenes),
+        );
+
+        setEpisodes(
+          sortEpisodes(
+            loadedEpisodes,
+          ),
+        );
+
+        setLocations(
+          sortLocations(
+            loadedLocations,
+          ),
+        );
+      } catch (caughtError) {
+        setError(
+          getErrorMessage(
+            caughtError,
+          ),
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    }, [projectId]);
+
+  useEffect(() => {
+    void loadWorkspace();
+  }, [loadWorkspace]);
+
+  async function createScene(
+    input: Omit<
+      CreateSceneInput,
+      "projectId"
+    >,
+  ): Promise<Scene | null> {
+    if (isSaving) {
+      return null;
+    }
+
+    setIsSaving(true);
+    setError(null);
+
+    try {
+      const createdScene =
+        await sceneService
+          .createScene({
+            ...input,
+            projectId,
+          });
+
+      setScenes(
+        (currentScenes) =>
+          sortScenes([
+            ...currentScenes,
+            createdScene,
+          ]),
+      );
+
+      return createdScene;
+    } catch (caughtError) {
+      setError(
+        getErrorMessage(
+          caughtError,
+        ),
+      );
+
+      return null;
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function updateScene(
+    id: string,
+    input: UpdateSceneInput,
+  ): Promise<Scene | null> {
+    if (isSaving) {
+      return null;
+    }
+
+    setIsSaving(true);
+    setError(null);
+
+    try {
+      const updatedScene =
+        await sceneService
+          .updateScene(
+            id,
+            input,
+          );
+
+      setScenes(
+        (currentScenes) =>
+          sortScenes(
+            currentScenes.map(
+              (scene) =>
+                scene.id === id
+                  ? updatedScene
+                  : scene,
+            ),
+          ),
+      );
+
+      return updatedScene;
+    } catch (caughtError) {
+      setError(
+        getErrorMessage(
+          caughtError,
+        ),
+      );
+
+      return null;
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function deleteScene(
+    id: string,
+  ): Promise<boolean> {
+    if (isSaving) {
+      return false;
+    }
+
+    setIsSaving(true);
+    setError(null);
+
+    try {
+      await sceneService.deleteScene(
+        id,
+      );
+
+      setScenes(
+        (currentScenes) =>
+          currentScenes.filter(
+            (scene) =>
+              scene.id !== id,
+          ),
+      );
+
+      return true;
+    } catch (caughtError) {
+      setError(
+        getErrorMessage(
+          caughtError,
+        ),
+      );
+
+      return false;
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function createQuickLocation(
+    input: Omit<
+      CreateLocationInput,
+      "projectId"
+    >,
+  ): Promise<Location | null> {
+    if (isSaving) {
+      return null;
+    }
+
+    setIsSaving(true);
+    setError(null);
+
+    try {
+      const createdLocation =
+        await locationService
+          .createLocation({
+            ...input,
+            projectId,
+          });
+
+      setLocations(
+        (currentLocations) =>
+          sortLocations([
+            ...currentLocations,
+            createdLocation,
+          ]),
+      );
+
+      return createdLocation;
+    } catch (caughtError) {
+      setError(
+        getErrorMessage(
+          caughtError,
+        ),
+      );
+
+      return null;
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  function clearError(): void {
+    setError(null);
+  }
+
+  return {
+    scenes,
+    episodes,
+    locations,
+
+    isLoading,
+    isSaving,
+    error,
+
+    createScene,
+    updateScene,
+    deleteScene,
+
+    createQuickLocation,
+
+    clearError,
+    loadWorkspace,
+  };
+}
+
+function sortScenes(
+  scenes: Scene[],
+): Scene[] {
+  return [...scenes].sort(
+    (firstScene, secondScene) => {
+      if (
+        firstScene.episodeId ===
+        secondScene.episodeId
+      ) {
+        return (
+          firstScene.orderIndex -
+          secondScene.orderIndex
+        );
+      }
+
+      if (
+        firstScene.episodeId === null
+      ) {
+        return -1;
+      }
+
+      if (
+        secondScene.episodeId === null
+      ) {
+        return 1;
+      }
+
+      return firstScene.episodeId
+        .localeCompare(
+          secondScene.episodeId,
+        );
+    },
+  );
+}
+
+function sortEpisodes(
+  episodes: Episode[],
+): Episode[] {
+  return [...episodes].sort(
+    (firstEpisode, secondEpisode) =>
+      firstEpisode.orderIndex -
+        secondEpisode.orderIndex ||
+      firstEpisode.number -
+        secondEpisode.number,
+  );
+}
+
+function sortLocations(
+  locations: Location[],
+): Location[] {
+  return [...locations].sort(
+    (firstLocation, secondLocation) =>
+      firstLocation.name.localeCompare(
+        secondLocation.name,
+        "ar",
+      ),
+  );
+}
+
+function getErrorMessage(
+  error: unknown,
+): string {
+  const message =
+    error instanceof Error
+      ? error.message
+      : String(error);
+
+  if (
+    message.includes(
+      "UNIQUE constraint failed",
+    )
+  ) {
+    return "ÙŠÙˆØ¬Ø¯ Ø¹Ù†ØµØ± Ø¢Ø®Ø± ÙŠØ­Ù…Ù„ Ø§Ù„Ø±Ù‚Ù… Ø£Ùˆ Ø§Ù„Ø§Ø³Ù… Ù†ÙØ³Ù‡.";
+  }
+
+  if (
+    message.includes(
+      "FOREIGN KEY constraint failed",
+    )
+  ) {
+    return "ØªØ¹Ø°Ø± Ø­ÙØ¸ Ø§Ù„Ù…Ø´Ù‡Ø¯ Ø¨Ø³Ø¨Ø¨ Ø§Ø±ØªØ¨Ø§Ø· ØºÙŠØ± ØµØ§Ù„Ø­.";
+  }
+
+  return message;
+}
