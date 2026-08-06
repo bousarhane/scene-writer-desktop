@@ -48,9 +48,9 @@ pub fn run() {
         Migration {
             version: 5,
             description:
-                "remove_scene_element_order_unique",
+                "normalize_scene_element_ordering",
             sql: include_str!(
-                "../../src/database/migrations/005_remove_scene_element_order_unique.sql"
+                "../../src/database/migrations/005_normalize_scene_element_ordering.sql"
             ),
             kind: MigrationKind::Up,
         },

@@ -72,7 +72,7 @@ export class SceneElementService {
 
     if (scene === null) {
       throw new Error(
-        "المشهد المطلوب غير موجود.",
+        "Ø§Ù„Ù…Ø´Ù‡Ø¯ Ø§Ù„Ù…Ø·Ù„ÙˆØ¨ ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯.",
       );
     }
 
@@ -93,6 +93,11 @@ export class SceneElementService {
         currentElements,
         input.insertAfterElementId ??
           null,
+      );
+
+    const appendOrderIndex =
+      getNextAppendOrderIndex(
+        currentElements,
       );
 
     const now =
@@ -116,7 +121,7 @@ export class SceneElementService {
         input.content ?? "",
 
       orderIndex:
-        insertionIndex,
+        appendOrderIndex,
 
       isDualDialogue:
         input.isDualDialogue ??
@@ -140,9 +145,6 @@ export class SceneElementService {
 
       return element;
     }
-
-    element.orderIndex =
-      currentElements.length;
 
     await this.repository.create(
       element,
@@ -184,7 +186,7 @@ export class SceneElementService {
 
     if (existingElement === null) {
       throw new Error(
-        "عنصر المشهد المطلوب غير موجود.",
+        "Ø¹Ù†ØµØ± Ø§Ù„Ù…Ø´Ù‡Ø¯ Ø§Ù„Ù…Ø·Ù„ÙˆØ¨ ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯.",
       );
     }
 
@@ -264,7 +266,7 @@ export class SceneElementService {
 
     if (element === null) {
       throw new Error(
-        "عنصر المشهد المطلوب غير موجود.",
+        "Ø¹Ù†ØµØ± Ø§Ù„Ù…Ø´Ù‡Ø¯ Ø§Ù„Ù…Ø·Ù„ÙˆØ¨ ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯.",
       );
     }
 
@@ -282,7 +284,7 @@ export class SceneElementService {
 
     if (currentIndex < 0) {
       throw new Error(
-        "تعذر تحديد موضع عنصر المشهد.",
+        "ØªØ¹Ø°Ø± ØªØ­Ø¯ÙŠØ¯ Ù…ÙˆØ¶Ø¹ Ø¹Ù†ØµØ± Ø§Ù„Ù…Ø´Ù‡Ø¯.",
       );
     }
 
@@ -345,7 +347,7 @@ export class SceneElementService {
 
     if (scene === null) {
       throw new Error(
-        "المشهد المطلوب غير موجود.",
+        "Ø§Ù„Ù…Ø´Ù‡Ø¯ Ø§Ù„Ù…Ø·Ù„ÙˆØ¨ ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯.",
       );
     }
 
@@ -383,7 +385,7 @@ export class SceneElementService {
 
         if (element === undefined) {
           throw new Error(
-            "يتضمن الترتيب عنصرًا غير موجود.",
+            "ÙŠØªØ¶Ù…Ù† Ø§Ù„ØªØ±ØªÙŠØ¨ Ø¹Ù†ØµØ±Ù‹Ø§ ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯.",
           );
         }
 
@@ -412,7 +414,7 @@ export class SceneElementService {
       character.projectId !== projectId
     ) {
       throw new Error(
-        "الشخصية المحددة غير موجودة داخل هذا المشروع.",
+        "Ø§Ù„Ø´Ø®ØµÙŠØ© Ø§Ù„Ù…Ø­Ø¯Ø¯Ø© ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯Ø© Ø¯Ø§Ø®Ù„ Ù‡Ø°Ø§ Ø§Ù„Ù…Ø´Ø±ÙˆØ¹.",
       );
     }
   }
@@ -443,6 +445,19 @@ function getInsertionIndex(
   return precedingIndex + 1;
 }
 
+function getNextAppendOrderIndex(
+  elements: SceneElement[],
+): number {
+  return elements.reduce(
+    (maximum, element) =>
+      Math.max(
+        maximum,
+        element.orderIndex,
+      ),
+    -1,
+  ) + 1;
+}
+
 function validateCompleteOrder(
   currentElements:
     SceneElement[],
@@ -455,7 +470,7 @@ function validateCompleteOrder(
     orderedElementIds.length
   ) {
     throw new Error(
-      "يجب أن يتضمن الترتيب جميع عناصر المشهد.",
+      "ÙŠØ¬Ø¨ Ø£Ù† ÙŠØªØ¶Ù…Ù† Ø§Ù„ØªØ±ØªÙŠØ¨ Ø¬Ù…ÙŠØ¹ Ø¹Ù†Ø§ØµØ± Ø§Ù„Ù…Ø´Ù‡Ø¯.",
     );
   }
 
@@ -477,7 +492,7 @@ function validateCompleteOrder(
     orderedElementIds.length
   ) {
     throw new Error(
-      "يتضمن الترتيب عناصر مكررة.",
+      "ÙŠØªØ¶Ù…Ù† Ø§Ù„ØªØ±ØªÙŠØ¨ Ø¹Ù†Ø§ØµØ± Ù…ÙƒØ±Ø±Ø©.",
     );
   }
 
@@ -489,7 +504,7 @@ function validateCompleteOrder(
 
   if (containsUnknownElement) {
     throw new Error(
-      "يتضمن الترتيب عنصرًا لا ينتمي إلى المشهد.",
+      "ÙŠØªØ¶Ù…Ù† Ø§Ù„ØªØ±ØªÙŠØ¨ Ø¹Ù†ØµØ±Ù‹Ø§ Ù„Ø§ ÙŠÙ†ØªÙ…ÙŠ Ø¥Ù„Ù‰ Ø§Ù„Ù…Ø´Ù‡Ø¯.",
     );
   }
 }

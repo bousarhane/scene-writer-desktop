@@ -1,3 +1,4 @@
+
 import {
   useCallback,
   useState,
@@ -61,6 +62,13 @@ export function StudioShell() {
   );
 
   const [
+    projectOverrides,
+    setProjectOverrides,
+  ] = useState<Record<string, Project>>(
+    {},
+  );
+
+  const [
     activeProjectSection,
     setActiveProjectSection,
   ] =
@@ -83,12 +91,31 @@ export function StudioShell() {
     setIsCreatingProject,
   ] = useState(false);
 
+  const [
+    projectPendingDelete,
+    setProjectPendingDelete,
+  ] = useState<Project | null>(
+    null,
+  );
+
+  const [
+    isDeletingProject,
+    setIsDeletingProject,
+  ] = useState(false);
+
   const {
     projects,
     isLoading,
     error,
     createProject,
+    deleteProject,
   } = useProjects();
+
+  const displayedProjects =
+    projects.map((project) =>
+      projectOverrides[project.id] ??
+      project,
+    );
 
   function showLibrary(): void {
     setSelectedProjectId(null);
@@ -112,7 +139,7 @@ export function StudioShell() {
     projectId: string,
   ): void {
     const project =
-      projects.find(
+      displayedProjects.find(
         (candidate) =>
           candidate.id === projectId,
       ) ?? null;
@@ -135,6 +162,11 @@ export function StudioShell() {
         setCurrentProject(
           loadedProject,
         );
+
+        setProjectOverrides((current) => ({
+          ...current,
+          [loadedProject.id]: loadedProject,
+        }));
       },
       [],
     );
@@ -173,7 +205,10 @@ export function StudioShell() {
         setCurrentProject(project);
 
         setActiveProjectSection(
-          "story",
+          project.projectType === "series" ||
+          project.projectType === "single_episode"
+            ? "structure"
+            : "story",
         );
 
         setActiveView("project");
@@ -182,6 +217,56 @@ export function StudioShell() {
       return project;
     } finally {
       setIsCreatingProject(false);
+    }
+  }
+
+  function requestProjectDeletion(
+    project: Project,
+  ): void {
+    setProjectPendingDelete(
+      project,
+    );
+  }
+
+  function cancelProjectDeletion():
+    void {
+    if (isDeletingProject) {
+      return;
+    }
+
+    setProjectPendingDelete(
+      null,
+    );
+  }
+
+  async function confirmProjectDeletion():
+    Promise<void> {
+    if (
+      projectPendingDelete === null ||
+      isDeletingProject
+    ) {
+      return;
+    }
+
+    setIsDeletingProject(true);
+
+    try {
+      await deleteProject(
+        projectPendingDelete.id,
+      );
+
+      if (
+        selectedProjectId ===
+        projectPendingDelete.id
+      ) {
+        showLibrary();
+      }
+
+      setProjectPendingDelete(
+        null,
+      );
+    } finally {
+      setIsDeletingProject(false);
     }
   }
 
@@ -259,13 +344,17 @@ export function StudioShell() {
           {activeView ===
             "library" && (
             <LibraryView
-              projects={projects}
+              projects={displayedProjects}
               isLoading={isLoading}
+              error={error}
               onCreateProject={
                 openCreateProjectDialog
               }
               onOpenProject={
                 openProject
+              }
+              onDeleteProject={
+                requestProjectDeletion
               }
             />
           )}
@@ -292,6 +381,9 @@ export function StudioShell() {
                 onBackToLibrary={
                   showLibrary
                 }
+                onSelectProjectSection={
+                  setActiveProjectSection
+                }
               />
             )}
         </section>
@@ -312,6 +404,24 @@ export function StudioShell() {
           handleCreateProject
         }
       />
+
+      {projectPendingDelete !==
+        null && (
+        <DeleteProjectDialog
+          project={
+            projectPendingDelete
+          }
+          isDeleting={
+            isDeletingProject
+          }
+          onCancel={
+            cancelProjectDeletion
+          }
+          onConfirm={() => {
+            void confirmProjectDeletion();
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -319,20 +429,33 @@ export function StudioShell() {
 interface LibraryViewProps {
   projects: Project[];
   isLoading: boolean;
+  error: string | null;
 
   onCreateProject:
     () => void;
 
   onOpenProject:
     (projectId: string) => void;
+
+  onDeleteProject:
+    (project: Project) => void;
 }
 
 function LibraryView({
   projects,
   isLoading,
+  error,
   onCreateProject,
   onOpenProject,
+  onDeleteProject,
 }: LibraryViewProps) {
+  const [
+    openActionsProjectId,
+    setOpenActionsProjectId,
+  ] = useState<string | null>(
+    null,
+  );
+
   const hasProjects =
     projects.length > 0;
 
@@ -363,6 +486,15 @@ function LibraryView({
           مشروع جديد
         </button>
       </header>
+
+      {error !== null && (
+        <div
+          className="project-library-error"
+          role="alert"
+        >
+          {error}
+        </div>
+      )}
 
       {!hasProjects &&
         !isLoading && (
@@ -399,79 +531,279 @@ function LibraryView({
           aria-label="المشاريع المحفوظة"
         >
           {projects.map(
-            (project) => (
-              <button
-                key={project.id}
-                type="button"
-                className="project-library-card"
-                onClick={() => {
-                  onOpenProject(
-                    project.id,
-                  );
-                }}
-              >
-                <span className="project-library-card-topline">
-                  <span className="project-library-type">
-                    {getProjectTypeLabel(
-                      project.projectType,
-                    )}
-                  </span>
+            (project) => {
+              const isActionsOpen =
+                openActionsProjectId ===
+                project.id;
 
-                  <span className="project-library-status">
-                    {getProjectStatusLabel(
-                      project.status,
-                    )}
-                  </span>
-                </span>
+              return (
+                <article
+                  key={project.id}
+                  className="project-library-card"
+                >
+                  <div className="project-library-card-topline">
+                    <span className="project-library-type">
+                      {getProjectTypeLabel(
+                        project.projectType,
+                      )}
+                    </span>
 
-                <span className="project-library-card-main">
-                  <span className="project-library-mark">
-                    {getProjectInitial(
-                      project.title,
-                    )}
-                  </span>
+                    <div className="project-library-actions">
+                      <button
+                        type="button"
+                        className="project-library-actions-trigger"
+                        aria-label={`إجراءات مشروع ${project.title}`}
+                        aria-expanded={
+                          isActionsOpen
+                        }
+                        onClick={() => {
+                          setOpenActionsProjectId(
+                            isActionsOpen
+                              ? null
+                              : project.id,
+                          );
+                        }}
+                      >
+                        ⋮
+                      </button>
 
-                  <span className="project-library-copy">
-                    <strong>
-                      {project.title}
-                    </strong>
+                      {isActionsOpen && (
+                        <div
+                          className="project-library-actions-menu"
+                          role="menu"
+                        >
+                          <button
+                            type="button"
+                            role="menuitem"
+                            onClick={() => {
+                              setOpenActionsProjectId(
+                                null,
+                              );
 
-                    <small>
-                      {project.subtitle ||
-                        project.description ||
-                        "مشروع محفوظ محليًا"}
-                    </small>
-                  </span>
-                </span>
+                              onOpenProject(
+                                project.id,
+                              );
+                            }}
+                          >
+                            فتح المشروع
+                          </button>
 
-                <span className="project-library-meta">
-                  <span>
-                    {formatProjectDetails(
-                      project,
-                    )}
-                  </span>
+                          <button
+                            type="button"
+                            role="menuitem"
+                            className="is-danger"
+                            onClick={() => {
+                              setOpenActionsProjectId(
+                                null,
+                              );
 
-                  <span>
-                    {formatProjectDate(
-                      project.lastOpenedAt ??
-                        project.updatedAt ??
-                        project.createdAt,
-                    )}
-                  </span>
-                </span>
+                              onDeleteProject(
+                                project,
+                              );
+                            }}
+                          >
+                            حذف المشروع
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
 
-                <span className="project-library-open">
-                  فتح المشروع
-                  <span aria-hidden="true">
-                    ←
-                  </span>
-                </span>
-              </button>
-            ),
+                  <button
+                    type="button"
+                    className="project-library-card-main"
+                    onClick={() => {
+                      onOpenProject(
+                        project.id,
+                      );
+                    }}
+                  >
+                    <span className="project-library-mark">
+                      {getProjectInitial(
+                        project.title,
+                      )}
+                    </span>
+
+                    <span className="project-library-copy">
+                      <strong>
+                        {project.title}
+                      </strong>
+
+                      <small>
+                        {project.subtitle ||
+                          project.description ||
+                          "مشروع محفوظ محليًا"}
+                      </small>
+                    </span>
+                  </button>
+
+                  <div className="project-library-meta">
+                    <span>
+                      {formatProjectDetails(
+                        project,
+                      )}
+                    </span>
+
+                    <span>
+                      {formatProjectDate(
+                        project.lastOpenedAt ??
+                          project.updatedAt ??
+                          project.createdAt,
+                      )}
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="project-library-open"
+                    onClick={() => {
+                      onOpenProject(
+                        project.id,
+                      );
+                    }}
+                  >
+                    فتح المشروع
+                  </button>
+                </article>
+              );
+            },
           )}
         </section>
       )}
     </main>
+  );
+}
+
+interface DeleteProjectDialogProps {
+  project: Project;
+  isDeleting: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+}
+
+function DeleteProjectDialog({
+  project,
+  isDeleting,
+  onCancel,
+  onConfirm,
+}: DeleteProjectDialogProps) {
+  const [
+    confirmationText,
+    setConfirmationText,
+  ] = useState("");
+
+  const isConfirmed =
+    confirmationText.trim() ===
+    project.title.trim();
+
+  return (
+    <div
+      className="delete-project-backdrop"
+      role="presentation"
+      onMouseDown={(event) => {
+        if (
+          event.target ===
+          event.currentTarget
+        ) {
+          onCancel();
+        }
+      }}
+    >
+      <section
+        className="delete-project-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="delete-project-title"
+        dir="rtl"
+      >
+        <header>
+          <div>
+            <span>
+              إجراء نهائي
+            </span>
+
+            <h2 id="delete-project-title">
+              حذف المشروع
+            </h2>
+          </div>
+
+          <button
+            type="button"
+            aria-label="إغلاق"
+            disabled={isDeleting}
+            onClick={onCancel}
+          >
+            ×
+          </button>
+        </header>
+
+        <div className="delete-project-dialog-body">
+          <p>
+            سيُحذف مشروع{" "}
+            <strong>
+              «{project.title}»
+            </strong>{" "}
+            مع جميع مواسمه وحلقاته
+            ومشاهده ونصوصه وشخصياته
+            وأماكنه.
+          </p>
+
+          <p className="delete-project-warning">
+            لا يمكن التراجع عن هذا
+            الإجراء بعد تنفيذه.
+          </p>
+
+          <label>
+            <span>
+              اكتب اسم المشروع للتأكيد:
+            </span>
+
+            <strong>
+              {project.title}
+            </strong>
+
+            <input
+              type="text"
+              autoFocus
+              value={
+                confirmationText
+              }
+              disabled={isDeleting}
+              onChange={(event) => {
+                setConfirmationText(
+                  event.target.value,
+                );
+              }}
+            />
+          </label>
+        </div>
+
+        <footer>
+          <button
+            type="button"
+            className="delete-project-cancel"
+            disabled={isDeleting}
+            onClick={onCancel}
+          >
+            إلغاء
+          </button>
+
+          <button
+            type="button"
+            className="delete-project-confirm"
+            disabled={
+              !isConfirmed ||
+              isDeleting
+            }
+            onClick={onConfirm}
+          >
+            {isDeleting
+              ? "جارٍ حذف المشروع..."
+              : "حذف المشروع نهائيًا"}
+          </button>
+        </footer>
+      </section>
+    </div>
   );
 }
 

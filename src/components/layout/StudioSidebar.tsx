@@ -311,11 +311,6 @@ function getProjectNavigationItems(
       symbol: "ك",
     },
     {
-      section: "documents",
-      label: "الوثائق",
-      symbol: "و",
-    },
-    {
       section: "export",
       label: "التصدير",
       symbol: "ت",

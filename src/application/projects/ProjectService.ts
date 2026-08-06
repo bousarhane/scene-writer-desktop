@@ -49,6 +49,20 @@ export interface CreateProjectInput {
     number | null;
 }
 
+
+export interface UpdateProjectInput {
+  title: string;
+  subtitle?: string | null;
+  status: ProjectStatus;
+  authorName?: string | null;
+  description?: string | null;
+  plannedSeasonCount?: number | null;
+  plannedEpisodeCount?: number | null;
+  defaultEpisodeDurationMinutes?: number | null;
+  defaultMinimumScenesPerEpisode?: number | null;
+  defaultMaximumScenesPerEpisode?: number | null;
+}
+
 export class ProjectValidationError
   extends Error {
   constructor(
@@ -184,6 +198,57 @@ export class ProjectService {
     );
 
     return project;
+  }
+
+
+  async updateProject(
+    id: UUID,
+    input: UpdateProjectInput,
+  ): Promise<Project> {
+    const project =
+      await this.requireProject(id);
+
+    const updatedProject: Project = {
+      ...project,
+      title: input.title.trim(),
+      subtitle: input.subtitle?.trim() || null,
+      status: input.status,
+      authorName: input.authorName?.trim() || null,
+      description: input.description?.trim() || null,
+      plannedSeasonCount: normalizeSeasonCount(
+        project.projectType,
+        project.seriesStructure,
+        input.plannedSeasonCount ?? null,
+      ),
+      plannedEpisodeCount: normalizeEpisodeCount(
+        project.projectType,
+        input.plannedEpisodeCount ?? null,
+      ),
+      defaultEpisodeDurationMinutes:
+        input.defaultEpisodeDurationMinutes ?? null,
+      defaultMinimumScenesPerEpisode:
+        input.defaultMinimumScenesPerEpisode ?? null,
+      defaultMaximumScenesPerEpisode:
+        input.defaultMaximumScenesPerEpisode ?? null,
+      updatedAt: new Date().toISOString(),
+    };
+
+    const validationErrors =
+      validateProject(updatedProject);
+
+    if (validationErrors.length > 0) {
+      throw new ProjectValidationError(
+        validationErrors.map(
+          (error) => error.message,
+        ),
+      );
+    }
+
+    await this.repository.update(
+      updatedProject,
+    );
+
+    return updatedProject;
   }
 
   async renameProject(
