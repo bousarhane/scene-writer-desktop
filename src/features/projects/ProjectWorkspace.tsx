@@ -35,6 +35,10 @@ import {
   ProjectStructureWorkspace,
 } from "../structure/ProjectStructureWorkspace";
 
+import {
+  ExportWorkspace,
+} from "../export/ExportWorkspace";
+
 export type ProjectWorkspaceSection =
   | "dashboard"
   | "story"
@@ -298,8 +302,7 @@ export function ProjectWorkspace({
   }
 
   if (
-    activeSection === "scenes" ||
-    activeSection === "export"
+    activeSection === "scenes"
   ) {
     const usesEpisodes =
       project.projectType === "series" ||
@@ -327,6 +330,16 @@ export function ProjectWorkspace({
 
     return (
       <ScenesWorkspace
+        project={project}
+      />
+    );
+  }
+
+  if (
+    activeSection === "export"
+  ) {
+    return (
+      <ExportWorkspace
         project={project}
       />
     );
